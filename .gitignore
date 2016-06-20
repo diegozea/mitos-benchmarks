@@ -1,0 +1,9 @@
+*.jl.cov
+*.jl.mem
+
+# IJulia notebook:
+.ipynb_checkpoints
+*.ipynb
+
+# vim temporary files
+*~
