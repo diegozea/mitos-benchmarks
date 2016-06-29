@@ -242,6 +242,6 @@ function Run!(;module_msa::Bool=true,module_information::Bool=true,module_pdb::B
 end
 
 # @elapsed include("Benchmark.jl") # 486 s
-# @elapsed SetUp!() # 5790 s
-# @elapsed result = Run!() #
+# @elapsed SetUp!() # 5907 s
+# @elapsed result = Run!() # 5642 s
 # JLD.save("result_Benchmark.jld", "result", result);
