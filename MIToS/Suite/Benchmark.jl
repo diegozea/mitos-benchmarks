@@ -36,9 +36,9 @@ for (file,gzipped,shape,format) in [(msafile_long_sth_gz, "gzipped", "long", MIT
                                     (msafile_wide_fas,  "ungzipped", "wide", MIToS.MSA.FASTA)]
 
     # Default parser
-    msa["input"][string(shape,"_",gzipped)] = @benchmarkable read($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    msa["input"][string(shape,"_",gzipped,"_",format)] = @benchmarkable read($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
     # With mapping
-    msa["input"][string(shape,"_",gzipped,"_mapping")] = @benchmarkable read($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    msa["input"][string(shape,"_",gzipped,"_",format,"_mapping")] = @benchmarkable read($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
 end
 
 ##### output
@@ -54,7 +54,7 @@ for (file,gzipped,shape,format) in [(msafile_long_sth_gz, "gzipped", "long", MIT
                                     (msafile_wide_fas,  "ungzipped", "wide", MIToS.MSA.FASTA)]
     outfile = string("./tmp/",split(file,"/")[end])
     aln = read(file, format)
-    msa["output"][string(shape,"_",gzipped)] = @benchmarkable write($outfile, $aln, $format)
+    msa["output"][string(shape,"_",format,"_",gzipped)] = @benchmarkable write($outfile, $aln, $format)
 end
 
 ##### Identity
@@ -94,6 +94,10 @@ for (aln,label) in ((msa_long,"long"), (msa_wide,"wide"))
     information["estimateincolumns"][string("Entropy_Count_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,false}, Entropy{Float64}())
     information["estimateincolumns"][string("MI_Probability_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,2,false}, MutualInformation{Float64}())
     information["estimateincolumns"][string("MI_Count_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,false}, MutualInformation{Float64}())
+    information["estimateincolumns"][string("Entropy_Probability_Gapped_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,1,true}, Entropy{Float64}())
+    information["estimateincolumns"][string("Entropy_Count_Gapped_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,true}, Entropy{Float64}())
+    information["estimateincolumns"][string("MI_Probability_Gapped_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,2,true}, MutualInformation{Float64}())
+    information["estimateincolumns"][string("MI_Count_Gapped_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,true}, MutualInformation{Float64}())
 end
 
 ##### high level
@@ -155,7 +159,7 @@ for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
                                     (pdb_pdb,  "ungzipped", "pdb", PDBFile),
                                     (pdb_xml,  "ungzipped", "xml", PDBML)]
     # Default parser
-    mitos_pdb["input"][string(label,"_",gzipped)] = @benchmarkable read($file, $format)
+    mitos_pdb["input"][string(label,"_",format,"_",gzipped)] = @benchmarkable read($file, $format)
 end
 
 ##### output
@@ -166,7 +170,7 @@ for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
                                     (pdb_pdb,  "ungzipped", "pdb", PDBFile),
                                     (pdb_xml,  "ungzipped", "xml", PDBML)]
     outfile = string("./tmp/",split(file,"/")[end])
-    mitos_pdb["output"][string(label,"_",gzipped)] = @benchmarkable write($outfile, $pdb_residues, $format)
+    mitos_pdb["output"][string(label,"_",format,"_",gzipped)] = @benchmarkable write($outfile, $pdb_residues, $format)
 end
 
 # --------------------------------------------------------------------------- #
@@ -229,14 +233,15 @@ function Run!(;module_msa::Bool=true,module_information::Bool=true,module_pdb::B
         bench["information"] = run(information)
     end
     if module_pdb
-        bench["mitos_pdb"] = run(information)
+        bench["mitos_pdb"] = run(mitos_pdb)
     end
     if module_pfam
-        bench["pfam"] = run(information)
+        bench["pfam"] = run(pfam)
     end
     bench
 end
 
-# @elapsed include("Benchmark.jl") # 438 s
+# @elapsed include("Benchmark.jl") # 486 s
 # @elapsed SetUp!() # 5790 s
-# @elapsed result = Run!() # 14652 s
+# @elapsed result = Run!() #
+# JLD.save("result_Benchmark.jld", "result", result);
