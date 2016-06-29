@@ -1,4 +1,5 @@
 using BenchmarkTools
+using JLD
 using Base.Test
 using MIToS: MSA, Information, PDB, SIFTS, Pfam, Utils
 
@@ -78,9 +79,6 @@ for (aln,label) in ((msa_long,"long"), (msa_wide,"wide"))
     end
 end
 
-# Run MSA benchmark
-tune!(msa)
-msa_bench = run(msa)
 # --------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------- #
@@ -108,7 +106,7 @@ for (aln,label) in ((msa_long,"long"), (msa_wide,"wide"))
 end
 
 ##### low level
-const information["lowlevel"] = BenchmarkGroup()
+information["lowlevel"] = BenchmarkGroup()
 
 const residues = getresidues(msa_long)
 const column_i = residues[:,10]
@@ -122,19 +120,16 @@ const clusters_long = hobohmI(msa_long, 62)
 information["lowlevel"]["count_col"] = @benchmarkable count($column_i)
 information["lowlevel"]["count_col_col"] = @benchmarkable count($column_i, $column_j)
 information["lowlevel"]["count_col_col_col"] = @benchmarkable count($column_i, $column_j, $column_k)
-information["lowlevel"]["count_col_clusters"] = @benchmarkable count($column_i, weight=clusters)
-information["lowlevel"]["count_col_col_clusters"] = @benchmarkable count($column_i, $column_j, weight=clusters)
-information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable count($column_i, $column_j, $column_k, weight=clusters)
-information["lowlevel"]["probabilities_col"] = @benchmarkable probabilities($column_i)
-information["lowlevel"]["probabilities_col_col"] = @benchmarkable probabilities($column_i, $column_j)
-information["lowlevel"]["probabilities_col_col_col"] = @benchmarkable probabilities($column_i, $column_j, $column_k)
+information["lowlevel"]["count_col_clusters"] = @benchmarkable count($column_i, weight=$clusters_long)
+information["lowlevel"]["count_col_col_clusters"] = @benchmarkable count($column_i, $column_j, weight=$clusters_long)
+information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable count($column_i, $column_j, $column_k, weight=$clusters_long)
+information["lowlevel"]["probabilities_col"] = @benchmarkable probabilities(Float64, $column_i)
+information["lowlevel"]["probabilities_col_col"] = @benchmarkable probabilities(Float64, $column_i, $column_j)
+information["lowlevel"]["probabilities_col_col_col"] = @benchmarkable probabilities(Float64, $column_i, $column_j, $column_k)
 
 information["lowlevel"]["blosum_pseudofrequencies"] = @benchmarkable blosum_pseudofrequencies!($Gij, $Pij)
 information["lowlevel"]["probabilities_blosum"] = @benchmarkable probabilities(Float64, $nseq_msa_long, 8.512, $column_i, $column_j)
 
-# Run Information benchmark
-tune!(information)
-information_bench = run(information)
 # --------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------- #
@@ -148,7 +143,7 @@ const pdb_xml_gz = "../../data/2XWB.xml.gz"
 const pdb_pdb    = "../../data/2XWB.pdb"
 const pdb_xml    = "../../data/2XWB.xml"
 ### Residues
-const pdb_residues = read(pdb_pdb_gz, PDBML)
+const pdb_residues = read(pdb_xml_gz, PDBML)
 
 #### Parse benchmarks
 
@@ -174,9 +169,6 @@ for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
     mitos_pdb["output"][string(label,"_",gzipped)] = @benchmarkable write($outfile, $pdb_residues, $format)
 end
 
-# Run MSA benchmark
-tune!(mitos_pdb)
-mitos_pdb_bench = run(mitos_pdb)
 # --------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------- #
@@ -188,8 +180,8 @@ const aln = read(msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoor
 const col2res = msacolumn2pdbresidue(aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
 const pdb = read("../../data/2XWB.xml.gz", PDBML)
 const resdict = @residuesdict pdb model "1" chain "F" group "ATOM" residue "*"
-const cmap = msacontacts(msa, resdict, col2res)
-const ZMIp, MIp = buslje09(msa)
+const cmap = msacontacts(aln, resdict, col2res)
+const ZMIp, MIp = buslje09(aln)
 
 pfam["read_pfam_gzipped"] = @benchmarkable read($msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
 pfam["getseq2pdb"] = @benchmarkable getseq2pdb($aln)
@@ -203,7 +195,48 @@ pfam["contact_map"] = @benchmarkable msacontacts($aln, $resdict, $col2res)
 pfam["buslje09"] = @benchmarkable buslje09($aln)
 pfam["AUC"] = @benchmarkable AUC($ZMIp, $cmap)
 
-# Run Pfam (pipeline) benchmark
-tune!(pfam)
-pfam_bench = run(pfam)
 # --------------------------------------------------------------------------- #
+
+function SetUp!(;module_msa::Bool=true,module_information::Bool=true,module_pdb::Bool=true,module_pfam::Bool=true)
+    if module_msa
+        tune!(msa)
+        JLD.save("msa.jld", "msa", params(msa))
+    end
+    if module_information
+        tune!(information)
+        JLD.save("information.jld", "information", params(information))
+    end
+    if module_pdb
+        tune!(mitos_pdb)
+        JLD.save("mitos_pdb.jld", "mitos_pdb", params(mitos_pdb))
+    end
+    if module_pfam
+        tune!(pfam)
+        JLD.save("pfam.jld", "pfam", params(pfam))
+    end
+end
+
+function Run!(;module_msa::Bool=true,module_information::Bool=true,module_pdb::Bool=true,module_pfam::Bool=true)
+    loadparams!(msa, JLD.load("msa.jld", "msa"), :evals, :samples);
+    loadparams!(information, JLD.load("information.jld", "information"), :evals, :samples);
+    loadparams!(mitos_pdb, JLD.load("mitos_pdb.jld", "mitos_pdb"), :evals, :samples);
+    loadparams!(pfam, JLD.load("pfam.jld", "pfam"), :evals, :samples);
+    bench = Dict{ASCIIString,BenchmarkGroup}()
+    if module_msa
+        bench["msa"] = run(msa)
+    end
+    if module_information
+        bench["information"] = run(information)
+    end
+    if module_pdb
+        bench["mitos_pdb"] = run(information)
+    end
+    if module_pfam
+        bench["pfam"] = run(information)
+    end
+    bench
+end
+
+# @elapsed include("Benchmark.jl") # 438 s
+# @elapsed SetUp!() # 5790 s
+# @elapsed result = Run!() # 14652 s
