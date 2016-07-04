@@ -10,3 +10,7 @@
 
 # tmp
 MIToS/Suite/tmp/*.*
+
+# R
+.RData
+.Rhistory
