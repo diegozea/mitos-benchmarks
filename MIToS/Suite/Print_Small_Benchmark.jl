@@ -20,6 +20,7 @@ end
 
 println("#### Pfam/pipeline  ")
 println("  ")
+println("|   |   |  ")
 println("|---|---|  ")
 for (k,v) in minimum(res["small_result"]["small_bench_pfam"])
     println("| ", replace(k,"MIToS.Pfam.","") , " | ", BenchmarkTools.prettytime(time(v)), " |  ")
