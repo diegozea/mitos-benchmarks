@@ -1,7 +1,20 @@
-# mitos-benchmarks
-Benchmarking MIToS against various languages and packages
+# Benchmarking Julia's MIToS... 
+**against various languages and packages.**
+
+The following benchmarks are conducted using the *master* branch of MIToS (using *Julia 0.4.5*).
+We use as an example the *Pfam PF08171* (208 sequences, 68 columns without inserts) and the *PDB 4BL0* (1133 residues, 6408 atoms).  
+
+A more detailed benchmark of the **MIToS' PDB module** can be found in the [**pdb-benchmarks**](https://github.com/jgreener64/pdb-benchmarks) repository.  
 
 ## Pipeline benchmark
+
+Here we show the number of *seconds* or *milliseconds* that takes the **common steps (in bold)** in a pipeline from a Pfam MSA to the calculation of the MIp contact prediction performance. We only include in the benchmark the capabilities that are directly provide by the packages like a single function or method. MIToS was designed to perform this kind of operations, it takes a different approach to other packages. That makes difficult the comparison. MIToS is closer to *ProDy/Evol* in terms of capabilities. *Prody* is a *Python* package but their parsing, mutual information and other functions are written in C. MIToS is completely written in Julia, which has a performance approximately between [1 and 2 times C](http://julialang.org/benchmarks/).  
+
+These times are the minimum time that takes 5 executions of the same function in the following computer:
+```
+  System: Linux (x86_64-linux-gnu)
+  CPU: Intel(R) Core(TM) i5 CPU         750  @ 2.67GHz
+```
 
 |                                                         | MIToS     | Prody           | Bio3D   | BioJulia | BioPython |
 |---------------------------------------------------------|-----------|-----------------|---------|----------|-----------|
@@ -27,6 +40,8 @@ Benchmarking MIToS against various languages and packages
 - [**BioPython**](http://biopython.org/): `pip install numpy` and `pip install biopython`
 
 ## MIToS benchmarks
+
+These benchmarks were run on Ubuntu’s with an i7 CPU. This times are useful to choose the fastest method signatures, and will be used to improve MIToS performance in the near future.
 
 #### MSA module
 
