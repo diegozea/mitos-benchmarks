@@ -1,5 +1,5 @@
 # Benchmarking Julia's MIToS... 
-**against various languages and packages.**
+**...against various languages and packages.**
 
 The following benchmarks are conducted using the *master* branch of MIToS (using *Julia 0.4.5*).
 We use as an example the *Pfam PF08171* (208 sequences, 68 columns without inserts) and the *PDB 4BL0* (1133 residues, 6408 atoms).  
