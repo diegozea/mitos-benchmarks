@@ -41,7 +41,9 @@ These times are the minimum time that takes 5 executions of the same function in
 
 ## MIToS benchmarks
 
-These benchmarks were run on Ubuntu’s with an i7 CPU. This times are useful to choose the fastest method signatures, and will be used to improve MIToS performance in the near future.
+These benchmarks were run on a computer with Ubuntu’s and one i7 CPU.  
+The following times are useful to choose the fastest method signatures.  
+This benchmark will be used to improve MIToS performance in the near future.  
 
 #### MSA module
 
