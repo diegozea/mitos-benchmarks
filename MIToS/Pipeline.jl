@@ -23,12 +23,14 @@ macro timeit(ex,name)
     end
 end
 
+
+
 const aln_mapping = read("../data/PF08171.sth", Stockholm, generatemapping=true, useidcoordinates=true);
 const col2res = msacolumn2pdbresidue(aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../data/4bl0.xml.gz");
 const pdb_residues = read("../data/4BL0.xml", PDBML);
-const resdict = @residuesdict pdb_residues model "1" chain "B" group "ATOM" residue "*";
+const resdict = @residuesdict pdb_residues model "1" chain "B" group "ATOM" residue All;
 const cmap = msacontacts(aln_mapping, resdict, col2res);
-const ZMIp, MIp = buslje09(aln_mapping, samples=0, clustering=false, lambda=0.0, usegap=true);
+const ZMIp, MIp = buslje09(aln_mapping, samples=0, clustering=false, lambda=0.0, alphabet=UngappedAlphabet());
 
 @timeit read("../data/PF08171.sth", Stockholm, Matrix{Residue}) "Read Pfam Stockholm MSA"
 @timeit read("../data/PF08171.sth", Stockholm) "Read MSA and annotations"
@@ -37,5 +39,5 @@ const ZMIp, MIp = buslje09(aln_mapping, samples=0, clustering=false, lambda=0.0,
 @timeit msacolumn2pdbresidue(aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../data/4bl0.xml.gz") "SIFTS residue level mapping"
 @timeit read("../data/4BL0.xml", PDBML) "Read PDBML"
 @timeit msacontacts(aln_mapping, resdict, col2res) "Protein Contact Map"
-@timeit APC!(estimateincolumns(aln_mapping, ResidueCount{Int,2,true}, MutualInformation{Float64}())) "Mutual Information APC"
-@timeit AUC($MIp, $cmap) "AUC (ROC) for contact prediction, MIp"
+@timeit APC!(mapcolpairfreq!(mutual_information, aln_mapping, Counts{Float64,2,GappedAlphabet}(ContingencyTable(Float64,Val{2},GappedAlphabet())))) "Mutual Information APC"
+@timeit AUC(MIp, cmap) "AUC (ROC) for contact prediction, MIp"
