@@ -5,10 +5,10 @@ MIToS (Julia)
 
 cd("MIToS")
 
-println(readall(`julia ReadMSA.jl`))
-println(readall(`julia Entropy.jl`))
-println(readall(`julia PID.jl`))
-println(readall(`julia MIp.jl`))
+println(readstring(`julia ReadMSA.jl`))
+println(readstring(`julia Entropy.jl`))
+println(readstring(`julia PID.jl`))
+println(readstring(`julia MIp.jl`))
 
 cd("..")
 
@@ -19,10 +19,10 @@ ProDy (Python + C)
 
 cd("ProDy")
 
-println(readall(`python ReadMSA.py`))
-println(readall(`python Entropy.py`))
-println(readall(`python PID.py`))
-println(readall(`python MIp.py`))
+println(readstring(`python ReadMSA.py`))
+println(readstring(`python Entropy.py`))
+println(readstring(`python PID.py`))
+println(readstring(`python MIp.py`))
 
 cd("..")
 
@@ -33,8 +33,8 @@ Bio3D (R)
 
 cd("Bio3D")
 
-println(readall(`Rscript ReadMSA.R`))
-println(readall(`Rscript Entropy.R`))
-println(readall(`Rscript PID.R`))
+println(readstring(`Rscript ReadMSA.R`))
+println(readstring(`Rscript Entropy.R`))
+println(readstring(`Rscript PID.R`))
 
 cd("..")

@@ -8,7 +8,7 @@ elapsed = time.time() - start
 print "[BENCH] Read compressed Stockholm PF00089: ", elapsed
 
 start = time.time()
-parseMSA("../data/PF00089.sth",) # .stockholm causes an error
+parseMSA("../data/PF00089.sth")  # .stockholm causes an error
 elapsed = time.time() - start
 
 print "[BENCH] Read uncompressed Stockholm PF00089: ", elapsed
