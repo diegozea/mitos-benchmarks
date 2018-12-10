@@ -1,7 +1,7 @@
 # Benchmarking Julia's MIToS... 
 **...against various languages and packages.**
 
-The following benchmarks are conducted using the *master* branch of MIToS (using *Julia 0.4.5*).
+The following benchmarks are conducted using MIToS v2.3.1 and Julia 1.0.2.
 We use as an example the *Pfam PF08171* (208 sequences, 68 columns without inserts) and the *PDB 4BL0* (1133 residues, 6408 atoms).  
 
 A more detailed benchmark of the **MIToS' PDB module** can be found in the [**pdb-benchmarks**](https://github.com/jgreener64/pdb-benchmarks) repository.  
@@ -12,8 +12,9 @@ Here we show the number of *seconds* or *milliseconds* that takes the **common s
 
 These times are the minimum time that takes 5 executions of the same function in the following computer:
 ```
-  System: Linux (x86_64-linux-gnu)
-  CPU: Intel(R) Core(TM) i5 CPU         750  @ 2.67GHz
+  OS: Linux (x86_64-pc-linux-gnu)
+  CPU: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
+  Memory: 15.387805938720703 GB
 ```
 
 |                                                         | MIToS     | Prody           | Bio3D   | BioJulia | BioPython |
@@ -21,15 +22,15 @@ These times are the minimum time that takes 5 executions of the same function in
 | Language                                                | Julia     | Python/C        | R       | Julia    | Python    |
 | License                                                 | MIT       | MIT             | GPLv2   | MIT      | Biopython |
 | **Download Pfam MSA**                                   | Stockholm | Stockholm/FASTA | FASTA   | ✗        | ✗         |
-| Read Pfam Stockholm [ms]                                | 1.35      | 0.60            | ✗       | ✗        | 7.32      |
-| Read MSA and annotations [ms]                           | 2.07      | ✗               | ✗       | ✗        | ✗         |
-| **Read MSA and annotations, generate coordinates [ms]** | 11.16     | ✗               | ✗       | ✗        | ✗         |
-| Percent Identity Matrix [ms]                            | 6.87      | 5.71            | 457.00  | ✗        | ✗         |
-| **SIFTS residue level mapping [ms]**                    | 40.34     | ✗               | ✗       | ✗        | ✗         |
-| **Read PDBML [s]**                                      | 0.5271    | ✗               | ✗       | ✗        | ✗         |
-| **Protein Contact Map [ms]**                            | 0.99      | ✗               | 5114.00 | ✗        | ✗         |
-| **Mutual Information APC (MIp) [ms]**                   | 23.67     | 13.13           | ✗       | ✗        | ✗         |
-| **AUC (ROC) for contact prediction, MIp [ms]**          | 2.65      | ✗               | ✗       | ✗        | ✗         |
+| Read Pfam Stockholm [ms]                                | 0.46      | 0.70            | ✗       | ✗        | 3.99      |
+| Read MSA and annotations [ms]                           | 0.83      | ✗               | ✗       | ✗        | ✗         |
+| **Read MSA and annotations, generate coordinates [ms]** | 9.45      | ✗               | ✗       | ✗        | ✗         |
+| Percent Identity Matrix [ms]                            | 2.06      | 4.38            | 267.00  | ✗        | ✗         |
+| **SIFTS residue level mapping [s]**                     | 0.03      | ✗               | ✗       | ✗        | ✗         |
+| **Read PDBML [s]**                                      | 0.29      | ✗               | ✗       | NA       | ✗         |
+| **Protein Contact Map [ms]**                            | 0.63      | ✗               | 5026.00 | NA       | ✗         |
+| **Mutual Information APC (MIp) [ms]**                   | 4.77      | 8.50            | ✗       | ✗        | ✗         |
+| **AUC (ROC) for contact prediction, MIp [ms]**          | 0.79      | ✗               | ✗       | ✗        | ✗         |
 
 ### Installations
 
@@ -45,107 +46,105 @@ These benchmarks were run on a computer with Ubuntu’s and one i7 CPU.
 The following times are useful to choose the fastest method signatures.  
 This benchmark will be used to improve MIToS performance in the near future.  
 
-#### MSA module
 
-| hobohmI | |
-|---|---|
-| 10 | 55.36 μs |
-| 20 | 73.48 μs |
-| 30 | 124.34 μs |
-| 40 | 203.35 μs |
-| 50 | 464.75 μs |
-| 60 | 797.88 μs |
-| 70 | 1.04 ms |
-| 80 | 1.07 ms |
-| 90 | 802.98 μs |
-
-| output | |
-|---|---|
-| Stockholm_gzipped | 1.15 ms |
-| Stockholm_ungzipped | 539.15 μs |
-| FASTA_gzipped | 589.09 μs |
-| FASTA_ungzipped | 174.26 μs |
-
-| identity | |
-|---|---|
-| matrix_Float16 | 5.15 ms |
-| matrix_Float32 | 4.81 ms |
-| matrix_Float64 | 4.80 ms |
-| matrix_BigFloat | 8.43 ms |
-| mean | 13.27 ms |
-
-| input | |
-|---|---|
-| Stockholm_gzipped | 3.75 ms |
-| Stockholm_gzipped_mapping | 9.43 ms |
-| Stockholm_ungzipped | 1.42 ms |
-| Stockholm_ungzipped_mapping | 7.07 ms |
-| FASTA_gzipped | 473.97 μs |
-| FASTA_gzipped_mapping | 1.88 ms |
-| FASTA_ungzipped | 378.86 μs |
-| FASTA_ungzipped_mapping | 1.78 ms |
-
-#### PDB module
-
-| output | |
-|---|---|
-| pdb_PDBFile_gzipped | 79.18 ms |
-| pdb_PDBFile_ungzipped | 33.06 ms |
-| xml_PDBML_gzipped | 78.37 ms |
-| xml_PDBML_ungzipped | 59.85 ms |
-
-| input | |
-|---|---|
-| pdb_PDBFile_gzipped | 86.12 ms |
-| pdb_PDBFile_ungzipped | 48.35 ms |
-| xml_PDBML_gzipped | 395.45 ms |
-| xml_PDBML_ungzipped | 385.28 ms |
-
-#### Information module
-
-| highlevel | |
-|---|---|
-| ZBLMIp_ | 59.32 s |
-| Buslje09_ | 4.35 s |
-
-| lowlevel | |
-|---|---|
-| count_col | 1.17 μs |
-| count_col_col | 5.05 μs |
-| count_col_col_col | 571.06 μs |
-| probabilities_col | 3.01 μs |
-| probabilities_col_col | 12.20 μs |
-| probabilities_col_col_col | 604.04 μs |
-| count_col_clusters | 2.27 μs |
-| count_col_col_clusters | 7.47 μs |
-| count_col_col_col_clusters | 576.96 μs |
-| blosum_pseudofrequencies | 614.25 μs |
-| probabilities_blosum | 636.79 μs   
-
-
-| estimateincolumns | |  
+#### MSA module  
+  
+| hobohmI | |  
 |---|---|  
-| Entropy_Count_Gapped | 16.66 ms |  
-| Entropy_Probability_Gapped | 93.68 μs |  
-| MI_Count | 22.15 ms |  
-| MI_Probability | 30.68 ms |  
-| MI_Count_Gapped | 23.13 ms  |  
-| MI_Probability_Gapped | 31.63 ms |  
-| Entropy_Count | 17.18 ms |  
-| Entropy_Probability | 96.86 μs |  
+| 40 | 201.389 μs |  
+| 80 | 876.749 μs |  
+| 20 | 76.812 μs |  
+| 10 | 56.748 μs |  
+| 70 | 865.224 μs |  
+| 90 | 694.931 μs |  
+| 50 | 412.437 μs |  
+| 30 | 130.826 μs |  
+| 60 | 670.980 μs |  
+  
+| output | |  
+|---|---|  
+| Stockholm_ungzipped | 2.102 ms |  
+| FASTA_gzipped | 2.677 ms |  
+| FASTA_ungzipped | 1.852 ms |  
+| Stockholm_gzipped | 3.443 ms |  
+  
+| identity | |  
+|---|---|  
+| matrix_Float64 | 1.899 ms |  
+| matrix_BigFloat | 3.034 ms |  
+| matrix_Float16 | 2.223 ms |  
+| mean | 434.556 ms |  
+| matrix_Float32 | 1.918 ms |  
+  
+| input | |  
+|---|---|  
+| Stockholm_ungzipped | 835.052 μs |  
+| FASTA_gzipped | 914.909 μs |  
+| Stockholm_gzipped_mapping | 12.116 ms |  
+| FASTA_ungzipped | 181.769 μs |  
+| Stockholm_ungzipped_mapping | 11.562 ms |  
+| Stockholm_gzipped | 1.315 ms |  
+  
+#### PDB module  
+  
+| output | |  
+|---|---|  
+| xml_PDBML_gzipped | 108.046 ms |  
+| pdb_PDBFile_ungzipped | 18.712 ms |  
+| xml_PDBML_ungzipped | 63.930 ms |  
+| pdb_PDBFile_gzipped | 61.506 ms |  
+  
+| input | |  
+|---|---|  
+| xml_PDBML_gzipped | 264.028 ms |  
+| pdb_PDBFile_ungzipped | 12.043 ms |  
+| xml_PDBML_ungzipped | 245.476 ms |  
+| pdb_PDBFile_gzipped | 19.502 ms |  
+  
+#### Information module  
+  
+| highlevel | |  
+|---|---|  
+| ZBLMIp_ | 13.228 s |  
+| Buslje09_ | 1.379 s |  
+  
+| mapcolfreq! | |  
+|---|---|  
+| Entropy_Count_Gapped | 51.292 μs |  
+| MI_Count | 4.056 ms |  
+| Entropy_Probability | 49.799 μs |  
+| MI_Probability | 5.639 ms |  
+| Entropy_Count | 48.138 μs |  
+| Entropy_Probability_Gapped | 50.423 μs |  
+| MI_Count_Gapped | 4.533 ms |  
+| MI_Probability_Gapped | 6.312 ms |  
+  
+| lowlevel | |  
+|---|---|  
+| probabilities_col_col | 2.997 μs |  
+| count_col | 604.861 ns |  
+| probabilities_col_col_col | 64.766 μs |  
+| count_col_col | 2.219 μs |  
+| count_col_col_clusters | 2.304 μs |  
+| count_col_col_col | 39.995 μs |  
+| probabilities_blosum | 103.877 μs |  
+| count_col_clusters | 593.821 ns |  
+| probabilities_col | 632.840 ns |  
+| count_col_col_col_clusters | 39.601 μs |  
 
 #### Pfam/pipeline  
   
 |   |   |  
 |---|---|  
-| read_pfam_gzipped | 9.41 ms |  
-| getseq2pdb | 21.99 μs |  
-| hasresidues | 7.91 μs |  
-| msacolumn2pdbresidue_sifts | 28.16 ms |  
-| msacolumn2pdbresidue_sifts_gzipped | 46.50 ms |  
-| read_PDBML_gzipped | 657.89 ms |  
-| residue_list_to_dict | 458.38 μs |  
-| msaresidues | 23.85 μs |  
-| contact_map | 591.21 μs |  
-| buslje09 | 4.15 s |  
-| AUC | 2.20 ms |  
+| read_pfam_gzipped | 11.937 ms |  
+| contact_map | 413.881 μs |  
+| getseq2pdb | 7.306 μs |  
+| msacolumn2pdbresidue_sifts | 35.733 ms |  
+| residue_list_to_dict | 158.207 μs |  
+| hasresidues | 17.626 μs |  
+| AUC | 788.969 μs |  
+| msaresidues | 21.869 μs |  
+| read_PDBML_gzipped | 261.228 ms |  
+| buslje09 | 1.380 s |  
+| msacolumn2pdbresidue_sifts_gzipped | 37.308 ms |  
+

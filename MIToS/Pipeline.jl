@@ -1,4 +1,10 @@
-using MIToS: MSA, Pfam, PDB, Information
+using MIToS.MSA
+using MIToS.Pfam
+using MIToS.PDB
+using MIToS.Information
+using Printf
+using ROCAnalysis
+
 
 # Download Pfam Stockholm
 # msa = downloadpfam('PF08171')

@@ -1,7 +1,13 @@
 using BenchmarkTools
 using JLD
-using Base.Test
-using MIToS: MSA, Information, PDB, SIFTS, Pfam, Utils
+using Test
+using MIToS
+using MIToS.MSA
+using MIToS.Information
+using MIToS.PDB
+using MIToS.SIFTS
+using MIToS.Pfam
+using MIToS.Utils
 
 # --------------------------------------------------------------------------- #
 # MSA module benchmarks
@@ -116,8 +122,8 @@ const residues = getresidues(msa_long)
 const column_i = residues[:,10]
 const column_j = residues[:,20]
 const column_k = residues[:,30]
-const Pij = probabilities(Float64, column_i, column_j)
-const Gij = ResidueProbability{Float64, 2,false}()
+const Pij = probabilities(column_i, column_j)
+const Gij = ContingencyTable{Float64,  2, UngappedAlphabet}(UngappedAlphabet())
 const nseq_msa_long = nsequences(msa_long)
 const clusters_long = hobohmI(msa_long, 62)
 
@@ -127,12 +133,12 @@ information["lowlevel"]["count_col_col_col"] = @benchmarkable count($column_i, $
 information["lowlevel"]["count_col_clusters"] = @benchmarkable count($column_i, weight=$clusters_long)
 information["lowlevel"]["count_col_col_clusters"] = @benchmarkable count($column_i, $column_j, weight=$clusters_long)
 information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable count($column_i, $column_j, $column_k, weight=$clusters_long)
-information["lowlevel"]["probabilities_col"] = @benchmarkable probabilities(Float64, $column_i)
-information["lowlevel"]["probabilities_col_col"] = @benchmarkable probabilities(Float64, $column_i, $column_j)
-information["lowlevel"]["probabilities_col_col_col"] = @benchmarkable probabilities(Float64, $column_i, $column_j, $column_k)
+information["lowlevel"]["probabilities_col"] = @benchmarkable probabilities($column_i)
+information["lowlevel"]["probabilities_col_col"] = @benchmarkable probabilities($column_i, $column_j)
+information["lowlevel"]["probabilities_col_col_col"] = @benchmarkable probabilities($column_i, $column_j, $column_k)
 
 information["lowlevel"]["blosum_pseudofrequencies"] = @benchmarkable blosum_pseudofrequencies!($Gij, $Pij)
-information["lowlevel"]["probabilities_blosum"] = @benchmarkable probabilities(Float64, $nseq_msa_long, 8.512, $column_i, $column_j)
+information["lowlevel"]["probabilities_blosum"] = @benchmarkable probabilities($column_i, $column_j, pseudofrequencies=BLOSUM_Pseudofrequencies(nsequences(msa), 8.512))
 
 # --------------------------------------------------------------------------- #
 
@@ -183,7 +189,7 @@ const pfam = BenchmarkGroup()
 const aln = read(msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
 const col2res = msacolumn2pdbresidue(aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
 const pdb = read("../../data/2XWB.xml.gz", PDBML)
-const resdict = @residuesdict pdb model "1" chain "F" group "ATOM" residue "*"
+const resdict = @residuesdict pdb model "1" chain "F" group "ATOM" residue All
 const cmap = msacontacts(aln, resdict, col2res)
 const ZMIp, MIp = buslje09(aln)
 
@@ -192,7 +198,7 @@ pfam["getseq2pdb"] = @benchmarkable getseq2pdb($aln)
 pfam["msacolumn2pdbresidue_sifts"] = @benchmarkable msacolumn2pdbresidue($aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
 pfam["msacolumn2pdbresidue_sifts_gzipped"] = @benchmarkable msacolumn2pdbresidue($aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml.gz")
 pfam["read_PDBML_gzipped"] = @benchmarkable read("../../data/2XWB.xml.gz", PDBML)
-pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb,"1","F","ATOM","*")
+pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb,"1","F","ATOM",All)
 pfam["msaresidues"] = @benchmarkable msaresidues($aln, $resdict, $col2res)
 pfam["hasresidues"] = @benchmarkable hasresidues($aln, $col2res)
 pfam["contact_map"] = @benchmarkable msacontacts($aln, $resdict, $col2res)

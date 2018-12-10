@@ -13,7 +13,7 @@ for (t,d,l) in [("#### MSA module","MIToS.MSA.","small_bench_msa"),
         println("| ", k, " | |  ")
         println("|---|---|  ")
         for (kk,vv) in minimum(v)
-            println("| ", replace(kk,d,"") , " | ", BenchmarkTools.prettytime(time(vv)), " |  ")
+            println("| ", replace(kk,d => "") , " | ", BenchmarkTools.prettytime(time(vv)), " |  ")
         end
     end
 end
@@ -23,6 +23,6 @@ println("  ")
 println("|   |   |  ")
 println("|---|---|  ")
 for (k,v) in minimum(res["small_result"]["small_bench_pfam"])
-    println("| ", replace(k,"MIToS.Pfam.","") , " | ", BenchmarkTools.prettytime(time(v)), " |  ")
+    println("| ", replace(k,"MIToS.Pfam." => "") , " | ", BenchmarkTools.prettytime(time(v)), " |  ")
 end
 
