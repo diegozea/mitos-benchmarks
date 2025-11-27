@@ -7,15 +7,24 @@ These benchmarks now target current toolchains:
 - Python ≥ 3.11 with **ProDy 2.x** and **Biopython 1.8x**
 - R ≥ 4.x with the latest **Bio3D** from CRAN
 
-The scripts are kept small and print `[BENCH]` lines so results remain comparable across releases. We use as examples the *Pfam PF08171* (208 sequences, 68 columns without inserts), *PF00089/PF16957* alignments, and the *PDB 4BL0* (1133 residues, 6408 atoms).  
-
-> Historical note: older numbers in this README were produced with MIToS v2.3.1 and Julia 1.0.2. The code has been updated for modern APIs; rerun `run_benchmark.jl` to collect fresh timings.
+The scripts are kept small and print `[BENCH]` lines so results remain comparable across 
+releases. We use as examples the *Pfam PF08171* (208 sequences, 68 columns without 
+inserts), *PF00089/PF16957* alignments, and the *PDB 4BL0* (1133 residues, 6408 atoms).  
 
 ## Pipeline benchmark
 
-Here we show the number of *seconds* or *milliseconds* that takes the **common steps (in bold)** in a pipeline from a Pfam MSA to the calculation of the MIp contact prediction performance. We only include in the benchmark the capabilities that are directly provide by the packages like a single function or method. MIToS was designed to perform this kind of operations, it takes a different approach to other packages. That makes difficult the comparison. MIToS is closer to *ProDy/Evol* in terms of capabilities. *Prody* is a *Python* package but their parsing, mutual information and other functions are written in C. MIToS is completely written in Julia, which has a performance approximately between [1 and 2 times C](http://julialang.org/benchmarks/).  
+Here we show the number of *seconds* or *milliseconds* that takes the 
+**common steps (in bold)** in a pipeline from a Pfam MSA to the calculation of the 
+MIp contact prediction performance. We only include in the benchmark the capabilities that 
+are directly provide by the packages like a single function or method. MIToS was designed 
+to perform this kind of operations, it takes a different approach to other packages. That 
+makes difficult the comparison. MIToS is closer to *ProDy/Evol* in terms of capabilities. 
+*Prody* is a *Python* package but their parsing, mutual information and other functions 
+are written in C. MIToS is completely written in Julia, which has a performance 
+approximately between [1 and 2 times C](http://julialang.org/benchmarks/).  
 
-These times are the minimum time that takes 5 executions of the same function in the following computer:
+These times are the minimum time that takes 5 executions of the same function in the 
+following computer:
 ```
   OS: Linux (Debian 6.1.94-1-amd64, kernel 6.1.0-22-amd64)
   CPU: 2 x Intel(R) Xeon(R) Silver 4316 @ 2.30GHz (80 threads total)
@@ -75,9 +84,13 @@ where `<step>` covers:
 
 Use these values to compare against the summary table above.
 
-> Notes: MIToS runs `buslje09` with `samples=0` (no shuffling), `clustering=false`, `lambda=0`, and `maxgap=1.0` to mirror ProDy’s “all columns, no clustering” behavior. ProDy uses `buildMutinfoMatrix` plus `applyMutinfoCorr(corr="prod")`. Results are comparable as “MIp-style” but not bit-for-bit identical.  
+> Notes: MIToS runs `buslje09` with `samples=0` (no shuffling), `clustering=false`, 
+  `lambda=0`, and `maxgap=1.0` to mirror ProDy’s “all columns, no clustering” behavior. 
+  ProDy uses `buildMutinfoMatrix` plus `applyMutinfoCorr(corr="prod")`. Results are 
+  comparable as “MIp-style” but not bit-for-bit identical.  
 > † Biopython PID is measured on PF16957 (full alignment).  
-> †† Bio3D PID is measured on PF16957 only; PF00089 is too large for `seqidentity` in this environment.  
+> †† Bio3D PID is measured on PF16957 only; PF00089 is too large for `seqidentity` in 
+  this environment.  
 > N/A = capability not available or not benchmarked in this suite.
 
 ### Installations
@@ -90,13 +103,6 @@ Use these values to compare against the summary table above.
 - [**Bio3D**](http://thegrantlab.org/bio3d/): `install.packages("bio3d")`
 - [**BioJulia**](http://biojulia.github.io/Bio.jl/latest/): `Pkg.add("Bio")` (used only in legacy scripts)
 
-### Changelog (current update)
-
-- Migrated MIToS benchmarks to the MIToS 3.x API (`read(path, FORMAT)` plus updated MI/MIp calls).
-- Modernized ProDy scripts for Python 3 and current `parseMSA`, `buildSeqidMatrix`, and MI/MIp helpers.
-- Verified Bio3D scripts on R 4.x and kept percent-identity/entropy benchmarks aligned with FASTA inputs.
-- Added Biopython benchmarks for FASTA and Stockholm (including full GF/GS/GC/GR annotation handling) plus a NumPy percent-identity baseline.
-
 ### Tests
 
 Small correctness checks using a toy alignment are available:
@@ -108,16 +114,22 @@ Small correctness checks using a toy alignment are available:
 
 ### Optional structural benchmarks (BioStructures + Bio3D)
 
-- BioStructures (Julia): `julia --project=. BioJulia/BioStructuresBench.jl` computes Cα contact maps, distance maps, and an optional contact graph for 4BL0 chain B. The bundled project includes `BioStructures`, `Graphs`, and `MetaGraphs`; the script skips cleanly if these packages are absent.
-- Bio3D structure (R): `Rscript Bio3D/Structure.R` reads 4BL0, builds a Cα contact map (8 Å), distance matrix, NMA-based DCCM, and a contact-filtered correlation network. Requires `bio3d` (already in the conda env) and `igraph` (added to `environment.yml`; the network step is skipped if it is missing).
-- These optional sections are wired into `run_benchmark.jl` (run with `julia --project=.`) and will emit `[SKIP]` messages rather than failing when dependencies are unavailable.
+- BioStructures (Julia): `julia --project=. BioJulia/BioStructuresBench.jl` computes Cα 
+  contact maps, distance maps, and an optional contact graph for 4BL0 chain B. The bundled 
+  project includes `BioStructures`, `Graphs`, and `MetaGraphs`; the script skips 
+  cleanly if these packages are absent.
+- Bio3D structure (R): `Rscript Bio3D/Structure.R` reads 4BL0, builds a Cα contact 
+  map (8 Å), distance matrix, NMA-based DCCM, and a contact-filtered correlation network. 
+  Requires `bio3d` (already in the conda env) and `igraph` (added to `environment.yml`; 
+  the network step is skipped if it is missing).
+- These optional sections are wired into `run_benchmark.jl` (run with `julia --project=.`) 
+  and will emit `[SKIP]` messages rather than failing when dependencies are unavailable.
 
 ## MIToS benchmarks
 
 These benchmarks were run on the machine described above (Debian, dual Xeon Silver 4316, 80 threads).  
 The following times are useful to choose the fastest method signatures.  
 This benchmark will be used to improve MIToS performance in the near future.  
-
 
 #### MSA module  
   
