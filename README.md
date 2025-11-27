@@ -36,14 +36,14 @@ following computer:
 | Language                                                | Julia  | Python/C | R          | Julia    | Python        |
 | License                                                 | MIT    | MIT    | GPLv2        | MIT      | Biopython     |
 | **Download Pfam MSA**                                   | Stockholm | Stockholm/FASTA | FASTA | N/A      | N/A           |
-| Read Pfam Stockholm [ms]                                | 0.41 ms | 0.45 ms | N/A         | N/A      | 40.56 ms      |
-| Read MSA and annotations [ms]                           | 0.56 ms | N/A    | N/A         | N/A      | 40.15 ms      |
-| **Read MSA and annotations, generate coordinates [ms]** | 3.15 ms | N/A    | N/A         | N/A      | N/A           |
-| Percent Identity Matrix [ms]                            | 1.59 ms | 4.64 ms | 459.76 ms†† | N/A      | 64.15 ms†     |
+| Read Pfam Stockholm [ms]                                | 0.35 ms | 4.08 ms | N/A         | N/A      | 2.28 ms       |
+| Read MSA and annotations [ms]                           | 0.58 ms | N/A    | N/A         | N/A      | 2.28 ms       |
+| **Read MSA and annotations, generate coordinates [ms]** | 3.13 ms | N/A    | N/A         | N/A      | N/A           |
+| Percent Identity Matrix [ms]                            | 1.65 ms | 4.63 ms | 181.00 ms†† | N/A      | 16.71 ms      |
 | **SIFTS residue level mapping [s]**                     | 0.02 s  | N/A    | N/A         | N/A      | N/A           |
 | **Read PDBML [s]**                                      | 0.25 s  | N/A    | N/A         | N/A      | N/A           |
-| **Protein Contact Map [ms]**                            | 0.37 ms | N/A    | 51.50 ms    | 38.64 ms | N/A           |
-| **Mutual Information APC (MIp) [ms]**                   | 5.02 ms | 5.24 ms | N/A        | N/A      | 1240.08 ms    |
+| **Protein Contact Map [ms]**                            | 0.37 ms | N/A    | 2156.00 ms  | 38.64 ms | N/A           |
+| **Mutual Information APC (MIp) [ms]**                   | 4.93 ms | 5.09 ms | N/A        | N/A      | 413.65 ms     |
 | **AUC (ROC) for contact prediction, MIp [ms]**          | 0.09 ms | N/A    | N/A         | N/A      | N/A           |
 
 Run everything from the repository root with the conda env activated:
@@ -84,13 +84,21 @@ where `<step>` covers:
 
 Use these values to compare against the summary table above.
 
+To collect all pipeline timings in one shot:
+
+```
+conda activate mitos-benchmarks
+julia --project=. run_pipeline.jl
+```
+
+This runs the Pipeline scripts for MIToS, ProDy, Bio3D, and Biopython and prints the same CSV-style rows.
+
 > Notes: MIToS runs `buslje09` with `samples=0` (no shuffling), `clustering=false`, 
   `lambda=0`, and `maxgap=1.0` to mirror ProDy’s “all columns, no clustering” behavior. 
   ProDy uses `buildMutinfoMatrix` plus `applyMutinfoCorr(corr="prod")`. Results are 
   comparable as “MIp-style” but not bit-for-bit identical.  
-> † Biopython PID is measured on PF16957 (full alignment).  
-> †† Bio3D PID is measured on PF16957 only; PF00089 is too large for `seqidentity` in 
-  this environment.  
+> †† Bio3D PID uses PF08171 here; PF00089 remains too large for `seqidentity` in this 
+  environment (PF16957 PID ≈ 0.37 s in the `[BENCH]` output).  
 > N/A = capability not available or not benchmarked in this suite.
 
 ### Installations
