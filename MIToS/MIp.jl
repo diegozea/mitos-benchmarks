@@ -1,8 +1,10 @@
 using MIToS.MSA
 using MIToS.Information
 
-const msa_long = read_file("../data/PF00089_aligned.fasta", FASTA)
-const msa_wide = read_file("../data/PF16957_aligned.fasta", FASTA)
+const data_dir = normpath(joinpath(@__DIR__, "..", "data"))
+
+const msa_long = read_file(joinpath(data_dir, "PF00089_aligned.fasta"), FASTA)
+const msa_wide = read_file(joinpath(data_dir, "PF16957_aligned.fasta"), FASTA)
 
 mip(msa) = last(
     buslje09(
@@ -12,6 +14,7 @@ mip(msa) = last(
         lambda = 0.0,          # no pseudocount
         maxgap = 1.0,          # keep all columns (match ProDy defaults)
         alphabet = UngappedAlphabet(),
+        apc = true,            # report APC-corrected MI (MIp)
     ),
 )
 _ = mip(msa_long) # warm-up

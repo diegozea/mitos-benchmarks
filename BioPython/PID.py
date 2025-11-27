@@ -1,11 +1,20 @@
-import time
 import numpy as np
+import time
 from Bio import AlignIO
 
+GAP_TOKENS = ("-", ".")
 
-def pid_matrix(arr, block=128):
+
+def _to_array(aln):
+    if isinstance(aln, np.ndarray):
+        return aln
+    return np.array([list(str(rec.seq)) for rec in aln], dtype="U1")
+
+
+def pid_matrix(aln, block=128):
+    arr = _to_array(aln)
     n, _ = arr.shape
-    mask = arr != "-"
+    mask = ~np.isin(arr, GAP_TOKENS)
     result = np.zeros((n, n), dtype=np.float32)
 
     for i in range(0, n, block):
@@ -32,8 +41,7 @@ def pid_matrix(arr, block=128):
 
 def bench_pid(path, label):
     aln = AlignIO.read(path, "fasta")
-    arr = np.array([list(str(rec.seq)) for rec in aln], dtype="U1")
-
+    arr = _to_array(aln)
     start = time.perf_counter()
     pid_matrix(arr)
     elapsed = time.perf_counter() - start

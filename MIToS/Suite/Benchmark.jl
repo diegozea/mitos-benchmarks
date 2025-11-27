@@ -24,8 +24,8 @@ const msafile_wide_sth    = "../../data/PF16957.sth"
 const msafile_wide_fas_gz = "../../data/PF16957.fasta.gz"
 const msafile_wide_fas    = "../../data/PF16957.fasta"
 ### MSAs
-const msa_long    = read(msafile_long_sth   , Stockholm)
-const msa_wide    = read(msafile_wide_sth   , Stockholm)
+const msa_long    = read_file(msafile_long_sth   , Stockholm)
+const msa_wide    = read_file(msafile_wide_sth   , Stockholm)
 
 #### Parse benchmarks
 
@@ -42,9 +42,9 @@ for (file,gzipped,shape,format) in [(msafile_long_sth_gz, "gzipped", "long", MIT
                                     (msafile_wide_fas,  "ungzipped", "wide", MIToS.MSA.FASTA)]
 
     # Default parser
-    msa["input"][string(shape,"_",gzipped,"_",format)] = @benchmarkable read($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    msa["input"][string(shape,"_",gzipped,"_",format)] = @benchmarkable read_file($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
     # With mapping
-    msa["input"][string(shape,"_",gzipped,"_",format,"_mapping")] = @benchmarkable read($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    msa["input"][string(shape,"_",gzipped,"_",format,"_mapping")] = @benchmarkable read_file($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
 end
 
 ##### output
@@ -59,7 +59,7 @@ for (file,gzipped,shape,format) in [(msafile_long_sth_gz, "gzipped", "long", MIT
                                     (msafile_wide_fas_gz, "gzipped", "wide", MIToS.MSA.FASTA),
                                     (msafile_wide_fas,  "ungzipped", "wide", MIToS.MSA.FASTA)]
     outfile = string("./tmp/",split(file,"/")[end])
-    aln = read(file, format)
+    aln = read_file(file, format)
     msa["output"][string(shape,"_",format,"_",gzipped)] = @benchmarkable write($outfile, $aln, $format)
 end
 
@@ -153,7 +153,7 @@ const pdb_xml_gz = "../../data/2XWB.xml.gz"
 const pdb_pdb    = "../../data/2XWB.pdb"
 const pdb_xml    = "../../data/2XWB.xml"
 ### Residues
-const pdb_residues = read(pdb_xml_gz, PDBML)
+const pdb_residues = read_file(pdb_xml_gz, PDBML)
 
 #### Parse benchmarks
 
@@ -165,7 +165,7 @@ for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
                                     (pdb_pdb,  "ungzipped", "pdb", PDBFile),
                                     (pdb_xml,  "ungzipped", "xml", PDBML)]
     # Default parser
-    mitos_pdb["input"][string(label,"_",format,"_",gzipped)] = @benchmarkable read($file, $format)
+    mitos_pdb["input"][string(label,"_",format,"_",gzipped)] = @benchmarkable read_file($file, $format)
 end
 
 ##### output
@@ -186,18 +186,18 @@ end
 const pfam = BenchmarkGroup()
 
 # Set up
-const aln = read(msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
+const aln = read_file(msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
 const col2res = msacolumn2pdbresidue(aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
-const pdb = read("../../data/2XWB.xml.gz", PDBML)
+const pdb = read_file("../../data/2XWB.xml.gz", PDBML)
 const resdict = @residuesdict pdb model "1" chain "F" group "ATOM" residue All
 const cmap = msacontacts(aln, resdict, col2res)
 const ZMIp, MIp = buslje09(aln)
 
-pfam["read_pfam_gzipped"] = @benchmarkable read($msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
+pfam["read_pfam_gzipped"] = @benchmarkable read_file($msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
 pfam["getseq2pdb"] = @benchmarkable getseq2pdb($aln)
 pfam["msacolumn2pdbresidue_sifts"] = @benchmarkable msacolumn2pdbresidue($aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
 pfam["msacolumn2pdbresidue_sifts_gzipped"] = @benchmarkable msacolumn2pdbresidue($aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml.gz")
-pfam["read_PDBML_gzipped"] = @benchmarkable read("../../data/2XWB.xml.gz", PDBML)
+pfam["read_PDBML_gzipped"] = @benchmarkable read_file("../../data/2XWB.xml.gz", PDBML)
 pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb,"1","F","ATOM",All)
 pfam["msaresidues"] = @benchmarkable msaresidues($aln, $resdict, $col2res)
 pfam["hasresidues"] = @benchmarkable hasresidues($aln, $col2res)

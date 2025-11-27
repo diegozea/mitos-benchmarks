@@ -6,6 +6,7 @@ dependencies:
   - pip
   - r-base>=4.3
   - r-bio3d
+  - r-igraph
   - pip:
       - prody
       - biopython

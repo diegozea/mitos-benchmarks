@@ -48,6 +48,22 @@ println(safe_read(`Rscript PID.R`))
 cd("..")
 
 println("""
+BioStructures (Julia, optional)
+===============================
+""")
+
+println(safe_read(`julia BioJulia/BioStructuresBench.jl`))
+
+println("""
+Bio3D Structure (R, optional)
+=============================
+""")
+
+cd("Bio3D")
+println(safe_read(`Rscript Structure.R`))
+cd("..")
+
+println("""
 Biopython (Python)
 ==================
 """)

@@ -104,6 +104,12 @@ Small correctness checks using a toy alignment are available:
 - Bio3D: `Rscript Bio3D/TestPID.R`
 - Biopython PID benchmarking can be capped via `BIOPYTHON_PID_MAXSEQ`; by default the full alignment is used for comparability.
 
+### Optional structural benchmarks (BioStructures + Bio3D)
+
+- BioStructures (Julia): `julia BioJulia/BioStructuresBench.jl` computes Cα contact maps, distance maps, and an optional contact graph for 4BL0 chain B. Requires `BioStructures`, `Graphs`, and `MetaGraphs` installed in your Julia environment. The script skips cleanly if these packages are absent.
+- Bio3D structure (R): `Rscript Bio3D/Structure.R` reads 4BL0, builds a Cα contact map (8 Å), distance matrix, NMA-based DCCM, and a contact-filtered correlation network. Requires `bio3d` (already in the conda env) and `igraph` (added to `environment.yml`; the network step is skipped if it is missing).
+- These optional sections are wired into `run_benchmark.jl` and will emit `[SKIP]` messages rather than failing when dependencies are unavailable.
+
 ## MIToS benchmarks
 
 These benchmarks were run on the machine described above (Debian, dual Xeon Silver 4316, 80 threads).  

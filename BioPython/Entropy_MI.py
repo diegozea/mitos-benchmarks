@@ -4,15 +4,17 @@ from collections import Counter
 import numpy as np
 from Bio import AlignIO
 
+GAP_TOKENS = ("-", ".")
+
 
 def alignment_array(aln):
-    return np.array([list(str(record.seq)) for record in aln])
+    return np.array([list(str(record.seq)) for record in aln], dtype="U1")
 
 
 def shannon_entropy(arr):
     ent = np.zeros(arr.shape[1], dtype=float)
     for idx, col in enumerate(arr.T):
-        mask = col != "-"
+        mask = ~np.isin(col, GAP_TOKENS)
         if not mask.any():
             continue
         symbols, counts = np.unique(col[mask], return_counts=True)
@@ -22,14 +24,15 @@ def shannon_entropy(arr):
 
 
 def mutual_information(arr):
+    arr = np.asarray(arr)
     ncol = arr.shape[1]
     mi = np.zeros((ncol, ncol), dtype=float)
-    for i in range(ncol):
+    for i in range(ncol - 1):
         col_i = arr[:, i]
-        mask_i = col_i != "-"
-        for j in range(i, ncol):
+        mask_i = ~np.isin(col_i, GAP_TOKENS)
+        for j in range(i + 1, ncol):
             col_j = arr[:, j]
-            mask = mask_i & (col_j != "-")
+            mask = mask_i & ~np.isin(col_j, GAP_TOKENS)
             if not mask.any():
                 continue
             pairs = Counter(zip(col_i[mask], col_j[mask]))

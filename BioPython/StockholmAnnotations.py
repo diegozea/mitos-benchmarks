@@ -25,17 +25,24 @@ if __name__ == "__main__":
     col_ann = alignment.column_annotations
     seqs = list(alignment)
 
+    ss_cons_key = "consensus secondary structure"
+    if ss_cons_key not in col_ann and "secondary_structure" in col_ann:
+        ss_cons_key = "secondary_structure"
+    residue_ss_key = "secondary structure"
+    if residue_ss_key not in seqs[0].letter_annotations and "secondary_structure" in seqs[0].letter_annotations:
+        residue_ss_key = "secondary_structure"
+
     n_seq = len(seqs)
     n_seq_with_ac = sum(1 for record in seqs if "accession" in record.annotations)
-    has_ss_cons = "consensus secondary structure" in col_ann
-    n_with_residue_ss = sum(1 for record in seqs if "secondary structure" in record.letter_annotations)
+    has_ss_cons = ss_cons_key in col_ann
+    n_with_residue_ss = sum(1 for record in seqs if residue_ss_key in record.letter_annotations)
 
     start = time.perf_counter()
     _ = ann.get("accession")
     _ = ann.get("identifier")
-    _ = col_ann.get("consensus secondary structure")
+    _ = col_ann.get(ss_cons_key)
     _ = [record.annotations.get("accession") for record in seqs]
-    _ = [record.letter_annotations.get("secondary structure") for record in seqs]
+    _ = [record.letter_annotations.get(residue_ss_key) for record in seqs]
     access_elapsed = time.perf_counter() - start
     print("[BENCH] Biopython Stockholm PF08171 annotation access:", access_elapsed)
 

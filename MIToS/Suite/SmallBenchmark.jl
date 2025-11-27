@@ -33,10 +33,10 @@ for (file,gzipped,format) in [(msafile_sth_gz, "gzipped", MIToS.MSA.Stockholm),
                               (msafile_fas,  "ungzipped", MIToS.MSA.FASTA)]
 
     # Default parser
-    small_bench_msa["input"][string(format,"_",gzipped)] = @benchmarkable read($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    small_bench_msa["input"][string(format,"_",gzipped)] = @benchmarkable read_file($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
     if format != FASTA
     	# With mapping
-    	small_bench_msa["input"][string(format,"_",gzipped,"_mapping")] = @benchmarkable read($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    	small_bench_msa["input"][string(format,"_",gzipped,"_mapping")] = @benchmarkable read_file($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
     end
 end
 
@@ -49,14 +49,14 @@ for (file,gzipped,format) in [(msafile_sth_gz, "gzipped", MIToS.MSA.Stockholm),
                               (msafile_fas,  "ungzipped", MIToS.MSA.FASTA)]
 
     outfile = string("./tmp/",split(file,"/")[end])
-    msa_to_save = read(file, format)
+    msa_to_save = read_file(file, format)
     small_bench_msa["output"][string(format,"_",gzipped)] = @benchmarkable write($outfile, $msa_to_save, $format)
 end
 
 ##### Identity
 small_bench_msa["identity"] = BenchmarkGroup()
 
-const aln = read(msafile_sth_gz, Stockholm);
+const aln = read_file(msafile_sth_gz, Stockholm);
 
 for t in (Float16,Float32,Float64,BigFloat)
     small_bench_msa["identity"][string("matrix_",t)] = @benchmarkable percentidentity($aln, $t)
@@ -135,7 +135,7 @@ const pdb_xml_gz = "../../data/4BL0.xml.gz"
 const pdb_pdb    = "../../data/4BL0.pdb"
 const pdb_xml    = "../../data/4BL0.xml"
 ### Residues
-const pdb_residues = read(pdb_xml_gz, PDBML);
+const pdb_residues = read_file(pdb_xml_gz, PDBML);
 
 #### Parse benchmarks
 
@@ -147,7 +147,7 @@ for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
                                     (pdb_pdb,  "ungzipped", "pdb", PDBFile),
                                     (pdb_xml,  "ungzipped", "xml", PDBML)]
     # Default parser
-    small_bench_mitos_pdb["input"][string(label,"_",format,"_",gzipped)] = @benchmarkable read($file, $format)
+    small_bench_mitos_pdb["input"][string(label,"_",format,"_",gzipped)] = @benchmarkable read_file($file, $format)
 end
 
 ##### output
@@ -168,17 +168,17 @@ end
 const small_bench_pfam = BenchmarkGroup()
 
 # Set up
-const aln_mapping = read(msafile_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true);
+const aln_mapping = read_file(msafile_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true);
 const col2res = msacolumn2pdbresidue(aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../../data/4bl0.xml.gz");
 const resdict = @residuesdict pdb_residues model "1" chain "B" group "ATOM" residue All;
 const cmap = msacontacts(aln_mapping, resdict, col2res);
 const ZMIp, MIp = buslje09(aln_mapping);
 
-small_bench_pfam["read_pfam_gzipped"] = @benchmarkable read($msafile_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
+small_bench_pfam["read_pfam_gzipped"] = @benchmarkable read_file($msafile_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
 small_bench_pfam["getseq2pdb"] = @benchmarkable getseq2pdb($aln_mapping)
 small_bench_pfam["msacolumn2pdbresidue_sifts"] = @benchmarkable msacolumn2pdbresidue($aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../../data/4bl0.xml")
 small_bench_pfam["msacolumn2pdbresidue_sifts_gzipped"] = @benchmarkable msacolumn2pdbresidue($aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../../data/4bl0.xml.gz")
-small_bench_pfam["read_PDBML_gzipped"] = @benchmarkable read("../../data/4BL0.xml.gz", PDBML)
+small_bench_pfam["read_PDBML_gzipped"] = @benchmarkable read_file("../../data/4BL0.xml.gz", PDBML)
 small_bench_pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb_residues,"1","B","ATOM",All)
 small_bench_pfam["msaresidues"] = @benchmarkable msaresidues($aln_mapping, $resdict, $col2res)
 small_bench_pfam["hasresidues"] = @benchmarkable hasresidues($aln_mapping, $col2res)

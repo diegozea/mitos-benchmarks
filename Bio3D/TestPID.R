@@ -22,9 +22,12 @@ expected <- matrix(
 )
 
 scale <- median(diag(pid))
-normalized <- pid / scale * 100
 
-if (!all(abs(normalized - expected) < 1e-6)) {
+if (abs(scale - 100) > 1e-6) {
+  stop("Diagonal of PID matrix deviates from 100; unexpected scaling")
+}
+
+if (!all(abs(round(pid, 6) - expected) < 1e-6)) {
   stop("Bio3D percent identity does not match expected values")
 }
 
