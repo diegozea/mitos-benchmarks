@@ -1,10 +1,15 @@
-# Benchmarking Julia's MIToS... 
+# Benchmarking Julia's MIToS...
 **...against various languages and packages.**
 
-The following benchmarks are conducted using MIToS v2.3.1 and Julia 1.0.2.
-We use as an example the *Pfam PF08171* (208 sequences, 68 columns without inserts) and the *PDB 4BL0* (1133 residues, 6408 atoms).  
+These benchmarks now target current toolchains:
 
-A more detailed benchmark of the **MIToS' PDB module** can be found in the [**pdb-benchmarks**](https://github.com/jgreener64/pdb-benchmarks) repository.  
+- Julia ≥ 1.9 with **MIToS 3.x**
+- Python ≥ 3.11 with **ProDy 2.x** and **Biopython 1.8x**
+- R ≥ 4.x with the latest **Bio3D** from CRAN
+
+The scripts are kept small and print `[BENCH]` lines so results remain comparable across releases. We use as examples the *Pfam PF08171* (208 sequences, 68 columns without inserts), *PF00089/PF16957* alignments, and the *PDB 4BL0* (1133 residues, 6408 atoms).  
+
+> Historical note: older numbers in this README were produced with MIToS v2.3.1 and Julia 1.0.2. The code has been updated for modern APIs; rerun `run_benchmark.jl` to collect fresh timings.
 
 ## Pipeline benchmark
 
@@ -12,37 +17,96 @@ Here we show the number of *seconds* or *milliseconds* that takes the **common s
 
 These times are the minimum time that takes 5 executions of the same function in the following computer:
 ```
-  OS: Linux (x86_64-pc-linux-gnu)
-  CPU: Intel(R) Core(TM) i7-8550U CPU @ 1.80GHz
-  Memory: 15.387805938720703 GB
+  OS: Linux (Debian 6.1.94-1-amd64, kernel 6.1.0-22-amd64)
+  CPU: 2 x Intel(R) Xeon(R) Silver 4316 @ 2.30GHz (80 threads total)
+  Memory: 1.0 TiB
 ```
 
-|                                                         | MIToS     | Prody           | Bio3D   | BioJulia | BioPython |
-|---------------------------------------------------------|-----------|-----------------|---------|----------|-----------|
-| Language                                                | Julia     | Python/C        | R       | Julia    | Python    |
-| License                                                 | MIT       | MIT             | GPLv2   | MIT      | Biopython |
-| **Download Pfam MSA**                                   | Stockholm | Stockholm/FASTA | FASTA   | ✗        | ✗         |
-| Read Pfam Stockholm [ms]                                | 0.46      | 0.70            | ✗       | ✗        | 3.99      |
-| Read MSA and annotations [ms]                           | 0.83      | ✗               | ✗       | ✗        | ✗         |
-| **Read MSA and annotations, generate coordinates [ms]** | 9.45      | ✗               | ✗       | ✗        | ✗         |
-| Percent Identity Matrix [ms]                            | 2.06      | 4.38            | 267.00  | ✗        | ✗         |
-| **SIFTS residue level mapping [s]**                     | 0.03      | ✗               | ✗       | ✗        | ✗         |
-| **Read PDBML [s]**                                      | 0.29      | ✗               | ✗       | NA       | ✗         |
-| **Protein Contact Map [ms]**                            | 0.63      | ✗               | 5026.00 | NA       | ✗         |
-| **Mutual Information APC (MIp) [ms]**                   | 4.77      | 8.50            | ✗       | ✗        | ✗         |
-| **AUC (ROC) for contact prediction, MIp [ms]**          | 0.79      | ✗               | ✗       | ✗        | ✗         |
+|                                                         | MIToS           | ProDy           | Bio3D        | BioJulia | Biopython        |
+|---------------------------------------------------------|-----------------|-----------------|--------------|----------|------------------|
+| Language                                                | Julia           | Python/C        | R            | Julia    | Python           |
+| License                                                 | MIT             | MIT             | GPLv2        | MIT      | Biopython        |
+| **Download Pfam MSA**                                   | Stockholm       | Stockholm/FASTA | FASTA        | ✗        | ✗                |
+| Read Pfam Stockholm [ms]                                | 0.42 ms         | 359.14 ms       | ✗            | ✗        | 592.22 ms        |
+| Read MSA and annotations [ms]                           | 0.65 ms         | ✗               | ✗            | ✗        | ✗                |
+| **Read MSA and annotations, generate coordinates [ms]** | 4.69 ms         | ✗               | ✗            | ✗        | ✗                |
+| Percent Identity Matrix [ms]                            | 3.99 ms         | 20.03 ms        | 374.42 ms††  | ✗        | 64.50 ms         |
+| **SIFTS residue level mapping [s]**                     | 0.02 s          | ✗               | ✗            | ✗        | ✗                |
+| **Read PDBML [s]**                                      | 0.25 s          | ✗               | ✗            | NA       | ✗                |
+| **Protein Contact Map [ms]**                            | 0.37 ms         | ✗               | 2161.00 ms   | NA       | ✗                |
+| **Mutual Information APC (MIp) [ms]**                   | 712.62 ms       | 525.96 ms       | ✗            | ✗        | 962.07 ms        |
+| **AUC (ROC) for contact prediction, MIp [ms]**          | 0.09 ms         | ✗               | ✗            | ✗        | ✗                |
+
+Run everything from the repository root with the conda env activated:
+
+```
+conda activate mitos-benchmarks
+julia run_benchmark.jl
+```
+
+### Running the MIToS pipeline benchmark
+
+The MIToS pipeline (`MIToS/Pipeline.jl`) benchmarks the end-to-end contact-prediction steps:
+
+1) Activate the conda env (for R/Python tools) and ensure Julia has MIToS and ROCAnalysis installed.
+2) From the repository root:
+
+```
+conda activate mitos-benchmarks
+julia MIToS/Pipeline.jl
+```
+
+This produces CSV-style lines:
+
+```
+MIToS,<step>,<time_ms>
+```
+
+where `<step>` covers:
+- Read Pfam Stockholm MSA
+- Read MSA and annotations
+- Read MSA and annotations, generate coordinates
+- Percent Identity Matrix
+- SIFTS residue level mapping
+- Read PDBML
+- Protein Contact Map
+- Mutual Information APC
+- AUC (ROC) for contact prediction, MIp
+
+Use these values to compare against the summary table above.
+
+> Notes: MIToS runs `buslje09` with `samples=0` (no shuffling), `clustering=false`, `lambda=0`, and `maxgap=1.0` to mirror ProDy’s “all columns, no clustering” behavior. ProDy uses `buildMutinfoMatrix` plus `applyMutinfoCorr(corr="prod")`. Results are comparable as “MIp-style” but not bit-for-bit identical.  
+> † Biopython PID now reflects the full PF00089 alignment (no cap).  
+> †† Bio3D PID is measured on PF16957 only; PF00089 is too large for `seqidentity` in this environment.
 
 ### Installations
 
-- [**MIToS**](http://diegozea.github.io/MIToS.jl/): `Pkg.add("MIToS")`
-- [**ProDy & Evol**](http://prody.csb.pitt.edu/): `pip install -U ProDy`
+- Conda (recommended unified env): `conda env create -f environment.yml`
+- [**MIToS**](http://diegozea.github.io/MIToS.jl/): `using Pkg; Pkg.add("MIToS")`
+- [**ProDy**](http://prody.csb.pitt.edu/): `python -m pip install -U prody`
+- [**Biopython**](http://biopython.org/): `python -m pip install -U biopython numpy`
 - [**Bio3D**](http://thegrantlab.org/bio3d/): `install.packages("bio3d")`
-- [**BioJulia**](http://biojulia.github.io/Bio.jl/latest/): `Pkg.add("Bio")`
-- [**BioPython**](http://biopython.org/): `pip install numpy` and `pip install biopython`
+- [**BioJulia**](http://biojulia.github.io/Bio.jl/latest/): `Pkg.add("Bio")` (used only in legacy scripts)
+
+### Changelog (current update)
+
+- Migrated MIToS benchmarks to the MIToS 3.x API (`read(path, FORMAT)` plus updated MI/MIp calls).
+- Modernized ProDy scripts for Python 3 and current `parseMSA`, `buildSeqidMatrix`, and MI/MIp helpers.
+- Verified Bio3D scripts on R 4.x and kept percent-identity/entropy benchmarks aligned with FASTA inputs.
+- Added Biopython benchmarks for FASTA and Stockholm (including full GF/GS/GC/GR annotation handling) plus a NumPy percent-identity baseline.
+
+### Tests
+
+Small correctness checks using a toy alignment are available:
+
+- Python (ProDy + Biopython): `python -m unittest tests/test_python_metrics.py`
+- MIToS: `julia MIToS/TestPID.jl`
+- Bio3D: `Rscript Bio3D/TestPID.R`
+- Biopython PID benchmarking can be capped via `BIOPYTHON_PID_MAXSEQ`; by default the full alignment is used for comparability.
 
 ## MIToS benchmarks
 
-These benchmarks were run on a computer with Ubuntu’s and one i7 CPU.  
+These benchmarks were run on the machine described above (Debian, dual Xeon Silver 4316, 80 threads).  
 The following times are useful to choose the fastest method signatures.  
 This benchmark will be used to improve MIToS performance in the near future.  
 
@@ -147,4 +211,3 @@ This benchmark will be used to improve MIToS performance in the near future.
 | read_PDBML_gzipped | 261.228 ms |  
 | buslje09 | 1.380 s |  
 | msacolumn2pdbresidue_sifts_gzipped | 37.308 ms |  
-

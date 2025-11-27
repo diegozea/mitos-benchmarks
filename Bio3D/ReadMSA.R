@@ -2,11 +2,11 @@ library(bio3d)
 library(microbenchmark)
 
 readfastalong <- function() {
-    read.fasta("../data/PF00089.fasta")
+    read.fasta("../data/PF00089_aligned.fasta")
 }
 
 readfastawide <- function() {
-    read.fasta("../data/PF16957.fasta")
+    read.fasta("../data/PF16957_aligned.fasta")
 }
 
 bench <- microbenchmark(readfastalong(), times=1)

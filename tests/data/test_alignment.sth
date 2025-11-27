@@ -1,0 +1,15 @@
+# STOCKHOLM 1.0
+#=GF ID TESTALIGN
+#=GF AC PFTEST
+#=GF DE Test alignment for percent identity and annotations
+seq1 ACDE
+seq2 ACDF
+seq3 ACGE
+#=GS seq1 AC ACC1
+#=GS seq2 AC ACC2
+#=GS seq3 AC ACC3
+#=GC SS_cons HHHH
+#=GR seq1 SS HHHH
+#=GR seq2 SS HHHT
+#=GR seq3 SS HHHH
+//

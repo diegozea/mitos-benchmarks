@@ -1,39 +1,45 @@
 import time
-from prody import *
+from prody import applyMutinfoCorr, buildMutinfoMatrix, buildSeqidMatrix, parseMSA
 
-def print_perf(name, time):
-    print("ProDy," + name + "," + str(time))
+
+def print_perf(name, timing_ms):
+    print("ProDy," + name + "," + str(timing_ms))
+
 
 msa = parseMSA("../data/PF08171.fasta", format="fasta")
 
-tmin = float('inf')
-for i in range(5):
-    t = time.time()
+tmin = float("inf")
+for _ in range(5):
+    start = time.perf_counter()
     parseMSA("../data/PF08171.sth", format="Stockholm")
-    t = time.time()-t
-    if t < tmin: tmin = t
+    elapsed = time.perf_counter() - start
+    if elapsed < tmin:
+        tmin = elapsed
 
-print_perf("Read Pfam Stockholm MSA", 1000*tmin)
+print_perf("Read Pfam Stockholm MSA", 1000 * tmin)
+
 
 def mip(msa):
-    MI = buildMutinfoMatrix(msa)
-    MIp = applyMutinfoCorr(MI)
-    return MIp
+    mi = buildMutinfoMatrix(msa)
+    return applyMutinfoCorr(mi, corr="prod")
 
-tmin = float('inf')
-for i in range(5):
-    t = time.time()
+
+tmin = float("inf")
+for _ in range(5):
+    start = time.perf_counter()
     mip(msa)
-    t = time.time()-t
-    if t < tmin: tmin = t
+    elapsed = time.perf_counter() - start
+    if elapsed < tmin:
+        tmin = elapsed
 
-print_perf("Mutual Information APC", 1000*tmin)
+print_perf("Mutual Information APC", 1000 * tmin)
 
-tmin = float('inf')
-for i in range(5):
-    t = time.time()
+tmin = float("inf")
+for _ in range(5):
+    start = time.perf_counter()
     buildSeqidMatrix(msa)
-    t = time.time()-t
-    if t < tmin: tmin = t
+    elapsed = time.perf_counter() - start
+    if elapsed < tmin:
+        tmin = elapsed
 
-print_perf("Percent Identity Matrix", 1000*tmin)
+print_perf("Percent Identity Matrix", 1000 * tmin)
