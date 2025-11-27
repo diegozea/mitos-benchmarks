@@ -1,3 +1,5 @@
+ENV["JULIA_PROJECT"] = @__DIR__
+
 println("""
 MIToS (Julia)
 =============

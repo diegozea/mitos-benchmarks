@@ -1,12 +1,14 @@
 import time
 from prody import applyMutinfoCorr, buildMutinfoMatrix, buildSeqidMatrix, parseMSA
 
+FASTA = "FASTA"
+
 
 def print_perf(name, timing_ms):
     print("ProDy," + name + "," + str(timing_ms))
 
 
-msa = parseMSA("../data/PF08171.fasta", format="fasta")
+msa = parseMSA("../data/PF08171.fasta", format=FASTA)
 
 tmin = float("inf")
 for _ in range(5):

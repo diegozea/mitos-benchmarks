@@ -22,26 +22,26 @@ These times are the minimum time that takes 5 executions of the same function in
   Memory: 1.0 TiB
 ```
 
-|                                                         | MIToS           | ProDy           | Bio3D        | BioJulia | Biopython        |
-|---------------------------------------------------------|-----------------|-----------------|--------------|----------|------------------|
-| Language                                                | Julia           | Python/C        | R            | Julia    | Python           |
-| License                                                 | MIT             | MIT             | GPLv2        | MIT      | Biopython        |
-| **Download Pfam MSA**                                   | Stockholm       | Stockholm/FASTA | FASTA        | ✗        | ✗                |
-| Read Pfam Stockholm [ms]                                | 0.42 ms         | 359.14 ms       | ✗            | ✗        | 592.22 ms        |
-| Read MSA and annotations [ms]                           | 0.65 ms         | ✗               | ✗            | ✗        | ✗                |
-| **Read MSA and annotations, generate coordinates [ms]** | 4.69 ms         | ✗               | ✗            | ✗        | ✗                |
-| Percent Identity Matrix [ms]                            | 3.99 ms         | 20.03 ms        | 374.42 ms††  | ✗        | 64.50 ms         |
-| **SIFTS residue level mapping [s]**                     | 0.02 s          | ✗               | ✗            | ✗        | ✗                |
-| **Read PDBML [s]**                                      | 0.25 s          | ✗               | ✗            | NA       | ✗                |
-| **Protein Contact Map [ms]**                            | 0.37 ms         | ✗               | 2161.00 ms   | NA       | ✗                |
-| **Mutual Information APC (MIp) [ms]**                   | 712.62 ms       | 525.96 ms       | ✗            | ✗        | 962.07 ms        |
-| **AUC (ROC) for contact prediction, MIp [ms]**          | 0.09 ms         | ✗               | ✗            | ✗        | ✗                |
+|                                                         | MIToS  | ProDy  | Bio3D        | BioJulia | Biopython     |
+|---------------------------------------------------------|--------|--------|--------------|----------|---------------|
+| Language                                                | Julia  | Python/C | R          | Julia    | Python        |
+| License                                                 | MIT    | MIT    | GPLv2        | MIT      | Biopython     |
+| **Download Pfam MSA**                                   | Stockholm | Stockholm/FASTA | FASTA | N/A      | N/A           |
+| Read Pfam Stockholm [ms]                                | 0.41 ms | 0.45 ms | N/A         | N/A      | 40.56 ms      |
+| Read MSA and annotations [ms]                           | 0.56 ms | N/A    | N/A         | N/A      | 40.15 ms      |
+| **Read MSA and annotations, generate coordinates [ms]** | 3.15 ms | N/A    | N/A         | N/A      | N/A           |
+| Percent Identity Matrix [ms]                            | 1.59 ms | 4.64 ms | 459.76 ms†† | N/A      | 64.15 ms†     |
+| **SIFTS residue level mapping [s]**                     | 0.02 s  | N/A    | N/A         | N/A      | N/A           |
+| **Read PDBML [s]**                                      | 0.25 s  | N/A    | N/A         | N/A      | N/A           |
+| **Protein Contact Map [ms]**                            | 0.37 ms | N/A    | 51.50 ms    | 38.64 ms | N/A           |
+| **Mutual Information APC (MIp) [ms]**                   | 5.02 ms | 5.24 ms | N/A        | N/A      | 1240.08 ms    |
+| **AUC (ROC) for contact prediction, MIp [ms]**          | 0.09 ms | N/A    | N/A         | N/A      | N/A           |
 
 Run everything from the repository root with the conda env activated:
 
 ```
 conda activate mitos-benchmarks
-julia run_benchmark.jl
+julia --project=. run_benchmark.jl
 ```
 
 ### Running the MIToS pipeline benchmark
@@ -53,7 +53,7 @@ The MIToS pipeline (`MIToS/Pipeline.jl`) benchmarks the end-to-end contact-predi
 
 ```
 conda activate mitos-benchmarks
-julia MIToS/Pipeline.jl
+julia --project=. MIToS/Pipeline.jl
 ```
 
 This produces CSV-style lines:
@@ -76,11 +76,13 @@ where `<step>` covers:
 Use these values to compare against the summary table above.
 
 > Notes: MIToS runs `buslje09` with `samples=0` (no shuffling), `clustering=false`, `lambda=0`, and `maxgap=1.0` to mirror ProDy’s “all columns, no clustering” behavior. ProDy uses `buildMutinfoMatrix` plus `applyMutinfoCorr(corr="prod")`. Results are comparable as “MIp-style” but not bit-for-bit identical.  
-> † Biopython PID now reflects the full PF00089 alignment (no cap).  
-> †† Bio3D PID is measured on PF16957 only; PF00089 is too large for `seqidentity` in this environment.
+> † Biopython PID is measured on PF16957 (full alignment).  
+> †† Bio3D PID is measured on PF16957 only; PF00089 is too large for `seqidentity` in this environment.  
+> N/A = capability not available or not benchmarked in this suite.
 
 ### Installations
 
+- Julia project for these benchmarks (MIToS, ROCAnalysis, BioStructures, Graphs, MetaGraphs): `cd mitos-benchmarks && julia --project=. -e 'using Pkg; Pkg.instantiate()'`
 - Conda (recommended unified env): `conda env create -f environment.yml`
 - [**MIToS**](http://diegozea.github.io/MIToS.jl/): `using Pkg; Pkg.add("MIToS")`
 - [**ProDy**](http://prody.csb.pitt.edu/): `python -m pip install -U prody`
@@ -106,9 +108,9 @@ Small correctness checks using a toy alignment are available:
 
 ### Optional structural benchmarks (BioStructures + Bio3D)
 
-- BioStructures (Julia): `julia BioJulia/BioStructuresBench.jl` computes Cα contact maps, distance maps, and an optional contact graph for 4BL0 chain B. Requires `BioStructures`, `Graphs`, and `MetaGraphs` installed in your Julia environment. The script skips cleanly if these packages are absent.
+- BioStructures (Julia): `julia --project=. BioJulia/BioStructuresBench.jl` computes Cα contact maps, distance maps, and an optional contact graph for 4BL0 chain B. The bundled project includes `BioStructures`, `Graphs`, and `MetaGraphs`; the script skips cleanly if these packages are absent.
 - Bio3D structure (R): `Rscript Bio3D/Structure.R` reads 4BL0, builds a Cα contact map (8 Å), distance matrix, NMA-based DCCM, and a contact-filtered correlation network. Requires `bio3d` (already in the conda env) and `igraph` (added to `environment.yml`; the network step is skipped if it is missing).
-- These optional sections are wired into `run_benchmark.jl` and will emit `[SKIP]` messages rather than failing when dependencies are unavailable.
+- These optional sections are wired into `run_benchmark.jl` (run with `julia --project=.`) and will emit `[SKIP]` messages rather than failing when dependencies are unavailable.
 
 ## MIToS benchmarks
 

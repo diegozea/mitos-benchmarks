@@ -5,23 +5,23 @@ catch e
     exit()
 end
 
-graphs_available = true
+global graphs_available = true
 try
     import Graphs
 catch e
-    graphs_available = false
+    global graphs_available = false
     println("[SKIP] Graphs.jl not available; graph benchmark will be skipped ($e)")
 end
 
-meta_available = true
+global meta_available = true
 try
     import MetaGraphs
 catch e
-    meta_available = false
+    global meta_available = false
     println("[SKIP] MetaGraphs.jl not available; contact graph benchmark will be skipped ($e)")
 end
 
-using BioStructures: calphaselector, collectatoms, ContactMap, DistanceMap
+using BioStructures: PDBFormat, calphaselector, collectatoms, ContactMap, DistanceMap
 
 data_dir = normpath(joinpath(@__DIR__, "..", "data"))
 pdb_path = joinpath(data_dir, "4BL0.pdb")
@@ -31,7 +31,7 @@ if !isfile(pdb_path)
     exit()
 end
 
-struc = BioStructures.read(pdb_path, BioStructures.PDB)
+struc = BioStructures.read(pdb_path, PDBFormat)
 chain_id = "B"
 
 chain = try
@@ -43,7 +43,7 @@ end
 
 calphas = collectatoms(chain, calphaselector)
 
-contact_time = @elapsed cmap = ContactMap(calphas; cutoff = 8.0)
+contact_time = @elapsed cmap = ContactMap(calphas, 8.0)
 distance_time = @elapsed dmap = DistanceMap(calphas)
 
 println("[BENCH] BioStructures ContactMap 4BL0 chain $chain_id CA (8A): ", contact_time)
@@ -52,7 +52,10 @@ println("[BENCH] BioStructures DistanceMap 4BL0 chain $chain_id CA: ", distance_
 if graphs_available && meta_available
     try
         g = nothing
-        graph_time = @elapsed g = MetaGraphs.MetaGraph(cmap)
+        graph_time = @elapsed begin
+            g_simple = Graphs.SimpleGraph(cmap.data)
+            g = MetaGraphs.MetaGraph(g_simple)
+        end
         println("[BENCH] BioStructures ContactGraph 4BL0 chain $chain_id: ", graph_time)
         println("[INFO] BioStructures graph nodes=", Graphs.nv(g), " edges=", Graphs.ne(g))
     catch e

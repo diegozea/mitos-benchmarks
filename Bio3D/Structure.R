@@ -27,20 +27,36 @@ distance_mat <- dm.xyz(ca_xyz)
 cat("[BENCH] Contact Map 4BL0 (Bio3D CA, 8A):", contact_time, "\n")
 cat("[BENCH] Distance Matrix 4BL0 (Bio3D CA):", distance_time, "\n")
 
-bench_dccm <- microbenchmark(
-  dccm_nma = dccm.nma(pdb),
-  times = 1
+nma_model <- tryCatch(
+  nma(pdb),
+  error = function(e) {
+    message("[SKIP] NMA failed: ", conditionMessage(e))
+    NULL
+  }
 )
-dccm_time <- bench_dccm$time / 1e9
-cij <- dccm.nma(pdb)
-cat("[BENCH] DCCM (NMA) 4BL0:", dccm_time, "\n")
 
-if (requireNamespace("igraph", quietly = TRUE)) {
+if (!is.null(nma_model)) {
+  bench_dccm <- microbenchmark(
+    dccm_nma = dccm(nma_model),
+    times = 1
+  )
+  dccm_time <- bench_dccm$time / 1e9
+  cij <- dccm(nma_model)
+  cat("[BENCH] DCCM (NMA) 4BL0:", dccm_time, "\n")
+} else {
+  cij <- NULL
+}
+
+if (is.null(cij)) {
+  cat("[SKIP] DCCM not available; skipping CNA network benchmark\n")
+} else if (requireNamespace("igraph", quietly = TRUE)) {
   net_time <- system.time({
     net <- cna(cij, cm = contact_mat)
   })["elapsed"]
+  nodes <- if (!is.null(net$acc)) nrow(net$acc) else NA_integer_
+  edges <- if (!is.null(net$edge)) nrow(net$edge) else NA_integer_
   cat("[BENCH] CNA network (contact-filtered) 4BL0:", net_time, "\n")
-  cat("[INFO] CNA nodes:", nrow(net$acc), "edges:", nrow(net$edge), "\n")
+  cat("[INFO] CNA nodes:", nodes, "edges:", edges, "\n")
 } else {
   cat("[SKIP] igraph not installed; skipping CNA network benchmark\n")
 }
