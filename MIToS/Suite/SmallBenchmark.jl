@@ -64,13 +64,6 @@ end
 
 small_bench_msa["identity"][string("mean")] = @benchmarkable meanpercentidentity($aln)
 
-##### Clustering
-small_bench_msa["hobohmI"] = BenchmarkGroup()
-
-for pid in 10:10:90
-    small_bench_msa["hobohmI"][string(pid)] = @benchmarkable hobohmI($aln, $pid)
-end
-
 # --------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------- #

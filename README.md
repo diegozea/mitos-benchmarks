@@ -141,18 +141,6 @@ This benchmark will be used to improve MIToS performance in the near future.
 
 #### MSA module  
   
-| hobohmI | |  
-|---|---|  
-| 40 | 201.389 μs |  
-| 80 | 876.749 μs |  
-| 20 | 76.812 μs |  
-| 10 | 56.748 μs |  
-| 70 | 865.224 μs |  
-| 90 | 694.931 μs |  
-| 50 | 412.437 μs |  
-| 30 | 130.826 μs |  
-| 60 | 670.980 μs |  
-  
 | output | |  
 |---|---|  
 | Stockholm_ungzipped | 2.102 ms |  

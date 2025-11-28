@@ -76,15 +76,6 @@ for (aln,label) in ((msa_long,"long"), (msa_wide,"wide"))
     msa["identity"][string("mean_",label)] = @benchmarkable meanpercentidentity($aln)
 end
 
-##### Clustering
-msa["hobohmI"] = BenchmarkGroup()
-
-for (aln,label) in ((msa_long,"long"), (msa_wide,"wide"))
-    for pid in 10:10:90
-        msa["hobohmI"][string(pid,"_",label)] = @benchmarkable hobohmI($aln, $pid)
-    end
-end
-
 # --------------------------------------------------------------------------- #
 
 # --------------------------------------------------------------------------- #
