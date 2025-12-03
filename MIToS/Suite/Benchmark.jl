@@ -1,5 +1,6 @@
 using BenchmarkTools
 using JLD
+using ROCAnalysis
 using Test
 using MIToS
 using MIToS.MSA
@@ -8,6 +9,9 @@ using MIToS.PDB
 using MIToS.SIFTS
 using MIToS.Pfam
 using MIToS.Utils
+
+# Ensure output directory exists for temporary files.
+mkpath("./tmp")
 
 # --------------------------------------------------------------------------- #
 # MSA module benchmarks
@@ -43,8 +47,10 @@ for (file,gzipped,shape,format) in [(msafile_long_sth_gz, "gzipped", "long", MIT
 
     # Default parser
     msa["input"][string(shape,"_",gzipped,"_",format)] = @benchmarkable read_file($file, $format)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
-    # With mapping
-    msa["input"][string(shape,"_",gzipped,"_",format,"_mapping")] = @benchmarkable read_file($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    if format != FASTA
+        # With mapping (Stockholm only; FASTA headers do not carry coordinates)
+        msa["input"][string(shape,"_",gzipped,"_",format,"_mapping")] = @benchmarkable read_file($file, $format, generatemapping=true, useidcoordinates=true)::MIToS.MSA.AnnotatedMultipleSequenceAlignment
+    end
 end
 
 ##### output
@@ -60,7 +66,7 @@ for (file,gzipped,shape,format) in [(msafile_long_sth_gz, "gzipped", "long", MIT
                                     (msafile_wide_fas,  "ungzipped", "wide", MIToS.MSA.FASTA)]
     outfile = string("./tmp/",split(file,"/")[end])
     aln = read_file(file, format)
-    msa["output"][string(shape,"_",format,"_",gzipped)] = @benchmarkable write($outfile, $aln, $format)
+    msa["output"][string(shape,"_",format,"_",gzipped)] = @benchmarkable write_file($outfile, $aln, $format)
 end
 
 ##### Identity
@@ -87,14 +93,14 @@ information["estimateincolumns"] = BenchmarkGroup()
 
 for (aln,label) in ((msa_long,"long"), (msa_wide,"wide"))
     residues = getresidues(aln)
-    information["estimateincolumns"][string("Entropy_Probability_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,1,false}, Entropy{Float64}())
-    information["estimateincolumns"][string("Entropy_Count_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,false}, Entropy{Float64}())
-    information["estimateincolumns"][string("MI_Probability_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,2,false}, MutualInformation{Float64}())
-    information["estimateincolumns"][string("MI_Count_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,false}, MutualInformation{Float64}())
-    information["estimateincolumns"][string("Entropy_Probability_Gapped_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,1,true}, Entropy{Float64}())
-    information["estimateincolumns"][string("Entropy_Count_Gapped_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,true}, Entropy{Float64}())
-    information["estimateincolumns"][string("MI_Probability_Gapped_",label)] = @benchmarkable estimateincolumns($residues, Int, ResidueProbability{Float64,2,true}, MutualInformation{Float64}())
-    information["estimateincolumns"][string("MI_Count_Gapped_",label)] = @benchmarkable estimateincolumns($residues, ResidueCount{Int,2,true}, MutualInformation{Float64}())
+    information["estimateincolumns"][string("Entropy_Probability_",label)] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Probabilities(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
+    information["estimateincolumns"][string("Entropy_Count_",label)] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Frequencies(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
+    information["estimateincolumns"][string("MI_Probability_",label)] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Probabilities(ContingencyTable(Float64,Val{2},UngappedAlphabet())))
+    information["estimateincolumns"][string("MI_Count_",label)] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Frequencies(ContingencyTable(Float64,Val{2},UngappedAlphabet())))
+    information["estimateincolumns"][string("Entropy_Probability_Gapped_",label)] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Probabilities(ContingencyTable(Float64,Val{1},GappedAlphabet())))
+    information["estimateincolumns"][string("Entropy_Count_Gapped_",label)] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Frequencies(ContingencyTable(Float64,Val{1},GappedAlphabet())))
+    information["estimateincolumns"][string("MI_Probability_Gapped_",label)] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Probabilities(ContingencyTable(Float64,Val{2},GappedAlphabet())))
+    information["estimateincolumns"][string("MI_Count_Gapped_",label)] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Frequencies(ContingencyTable(Float64,Val{2},GappedAlphabet())))
 end
 
 ##### high level
@@ -117,19 +123,23 @@ const Pij = probabilities(column_i, column_j)
 const Gij = ContingencyTable{Float64,  2, UngappedAlphabet}(UngappedAlphabet())
 const nseq_msa_long = nsequences(msa_long)
 const clusters_long = hobohmI(msa_long, 62)
+const blosum_pf = BLOSUM_Pseudofrequencies(nseq_msa_long, 8.512)
 
-information["lowlevel"]["count_col"] = @benchmarkable count($column_i)
-information["lowlevel"]["count_col_col"] = @benchmarkable count($column_i, $column_j)
-information["lowlevel"]["count_col_col_col"] = @benchmarkable count($column_i, $column_j, $column_k)
-information["lowlevel"]["count_col_clusters"] = @benchmarkable count($column_i, weight=$clusters_long)
-information["lowlevel"]["count_col_col_clusters"] = @benchmarkable count($column_i, $column_j, weight=$clusters_long)
-information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable count($column_i, $column_j, $column_k, weight=$clusters_long)
+information["lowlevel"]["count_col"] = @benchmarkable frequencies($column_i)
+information["lowlevel"]["count_col_col"] = @benchmarkable frequencies($column_i, $column_j)
+information["lowlevel"]["count_col_col_col"] = @benchmarkable frequencies($column_i, $column_j, $column_k)
+information["lowlevel"]["count_col_clusters"] = @benchmarkable frequencies($column_i; weights=$clusters_long)
+information["lowlevel"]["count_col_col_clusters"] = @benchmarkable frequencies($column_i, $column_j; weights=$clusters_long)
+information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable frequencies($column_i, $column_j, $column_k; weights=$clusters_long)
 information["lowlevel"]["probabilities_col"] = @benchmarkable probabilities($column_i)
 information["lowlevel"]["probabilities_col_col"] = @benchmarkable probabilities($column_i, $column_j)
 information["lowlevel"]["probabilities_col_col_col"] = @benchmarkable probabilities($column_i, $column_j, $column_k)
 
-information["lowlevel"]["blosum_pseudofrequencies"] = @benchmarkable blosum_pseudofrequencies!($Gij, $Pij)
-information["lowlevel"]["probabilities_blosum"] = @benchmarkable probabilities($column_i, $column_j, pseudofrequencies=BLOSUM_Pseudofrequencies(nsequences(msa), 8.512))
+information["lowlevel"]["blosum_pseudofrequencies"] = @benchmarkable begin
+    tbl = deepcopy(getcontingencytable($Pij))
+    apply_pseudofrequencies!(tbl, $blosum_pf)
+end
+information["lowlevel"]["probabilities_blosum"] = @benchmarkable probabilities($column_i, $column_j, pseudofrequencies=BLOSUM_Pseudofrequencies(nseq_msa_long, 8.512))
 
 # --------------------------------------------------------------------------- #
 
@@ -162,12 +172,11 @@ end
 ##### output
 mitos_pdb["output"] = BenchmarkGroup()
 
+# PDBML writing is no longer supported in MIToS; benchmark only the PDB (PDBFile) outputs.
 for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
-                                    (pdb_xml_gz, "gzipped", "xml", PDBML),
-                                    (pdb_pdb,  "ungzipped", "pdb", PDBFile),
-                                    (pdb_xml,  "ungzipped", "xml", PDBML)]
+                                    (pdb_pdb,  "ungzipped", "pdb", PDBFile)]
     outfile = string("./tmp/",split(file,"/")[end])
-    mitos_pdb["output"][string(label,"_",format,"_",gzipped)] = @benchmarkable write($outfile, $pdb_residues, $format)
+    mitos_pdb["output"][string(label,"_",format,"_",gzipped)] = @benchmarkable write_file($outfile, $pdb_residues, $format)
 end
 
 # --------------------------------------------------------------------------- #
@@ -180,7 +189,7 @@ const pfam = BenchmarkGroup()
 const aln = read_file(msafile_long_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true)
 const col2res = msacolumn2pdbresidue(aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
 const pdb = read_file("../../data/2XWB.xml.gz", PDBML)
-const resdict = @residuesdict pdb model "1" chain "F" group "ATOM" residue All
+const resdict = residuesdict(pdb; model="1", chain="F", group="ATOM", residue=All)
 const cmap = msacontacts(aln, resdict, col2res)
 const ZMIp, MIp = buslje09(aln)
 
@@ -189,7 +198,7 @@ pfam["getseq2pdb"] = @benchmarkable getseq2pdb($aln)
 pfam["msacolumn2pdbresidue_sifts"] = @benchmarkable msacolumn2pdbresidue($aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml")
 pfam["msacolumn2pdbresidue_sifts_gzipped"] = @benchmarkable msacolumn2pdbresidue($aln, "CFAB_HUMAN/481-752", "2XWB", "F", "PF00089","../../data/2xwb.xml.gz")
 pfam["read_PDBML_gzipped"] = @benchmarkable read_file("../../data/2XWB.xml.gz", PDBML)
-pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb,"1","F","ATOM",All)
+pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb; model="1", chain="F", group="ATOM", residue=All)
 pfam["msaresidues"] = @benchmarkable msaresidues($aln, $resdict, $col2res)
 pfam["hasresidues"] = @benchmarkable hasresidues($aln, $col2res)
 pfam["contact_map"] = @benchmarkable msacontacts($aln, $resdict, $col2res)
@@ -222,7 +231,7 @@ function Run!(;module_msa::Bool=true,module_information::Bool=true,module_pdb::B
     loadparams!(information, JLD.load("information.jld", "information"), :evals, :samples);
     loadparams!(mitos_pdb, JLD.load("mitos_pdb.jld", "mitos_pdb"), :evals, :samples);
     loadparams!(pfam, JLD.load("pfam.jld", "pfam"), :evals, :samples);
-    bench = Dict{ASCIIString,BenchmarkGroup}()
+    bench = Dict{String,BenchmarkGroup}()
     if module_msa
         bench["msa"] = run(msa)
     end

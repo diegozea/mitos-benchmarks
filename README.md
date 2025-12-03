@@ -133,6 +133,31 @@ Small correctness checks using a toy alignment are available:
 - These optional sections are wired into `run_benchmark.jl` (run with `julia --project=.`) 
   and will emit `[SKIP]` messages rather than failing when dependencies are unavailable.
 
+### Updating MIToS benchmark tables
+
+Run the MIToS suite from `MIToS/Suite` so the relative `data/` paths resolve, and use the repository project (`--project=../..`).
+
+- **Full suite (`Benchmark.jl`)** — longest run, best for a complete refresh:
+  ```
+  cd MIToS/Suite
+  julia --project=../.. --threads=auto
+  julia> include("Benchmark.jl")
+  julia> SetUp!()                      # tunes BenchmarkTools and writes *.jld
+  julia> result = Run!()
+  julia> JLD.save("result_Benchmark.jld", "result", result)
+  ```
+- **Tables in this README (`SmallBenchmark` + `Print_Small_Benchmark`)** — quicker refresh:
+  ```
+  cd MIToS/Suite
+  julia --project=../.. --threads=auto
+  julia> include("SmallBenchmark.jl")
+  julia> SetUp!()
+  julia> small_result = Run!()
+  julia> JLD.save("result_SmallBenchmark.jld", "small_result", small_result)
+  julia> include("Print_Small_Benchmark.jl")   # prints the Markdown tables
+  ```
+  Copy the printed Markdown into the “MIToS benchmarks” section below.
+
 ## MIToS benchmarks
 
 These benchmarks were run on the machine described above (Debian, dual Xeon Silver 4316, 80 threads).  
@@ -143,87 +168,85 @@ This benchmark will be used to improve MIToS performance in the near future.
   
 | output | |  
 |---|---|  
-| Stockholm_ungzipped | 2.102 ms |  
-| FASTA_gzipped | 2.677 ms |  
-| FASTA_ungzipped | 1.852 ms |  
-| Stockholm_gzipped | 3.443 ms |  
+| Stockholm_ungzipped | 1.486 ms |  
+| FASTA_gzipped | 1.832 ms |  
+| FASTA_ungzipped | 1.347 ms |  
+| Stockholm_gzipped | 2.245 ms |  
   
 | identity | |  
 |---|---|  
-| matrix_Float64 | 1.899 ms |  
-| matrix_BigFloat | 3.034 ms |  
-| matrix_Float16 | 2.223 ms |  
-| mean | 434.556 ms |  
-| matrix_Float32 | 1.918 ms |  
+| matrix_Float64 | 1.538 ms |  
+| matrix_BigFloat | 2.200 ms |  
+| matrix_Float16 | 1.988 ms |  
+| mean | 375.051 ms |  
+| matrix_Float32 | 1.573 ms |  
   
 | input | |  
 |---|---|  
-| Stockholm_ungzipped | 835.052 μs |  
-| FASTA_gzipped | 914.909 μs |  
-| Stockholm_gzipped_mapping | 12.116 ms |  
-| FASTA_ungzipped | 181.769 μs |  
-| Stockholm_ungzipped_mapping | 11.562 ms |  
-| Stockholm_gzipped | 1.315 ms |  
+| Stockholm_ungzipped | 476.821 μs |  
+| FASTA_gzipped | 311.402 μs |  
+| Stockholm_gzipped_mapping | 3.771 ms |  
+| FASTA_ungzipped | 132.511 μs |  
+| Stockholm_ungzipped_mapping | 3.084 ms |  
+| Stockholm_gzipped | 1.152 ms |  
   
 #### PDB module  
   
 | output | |  
 |---|---|  
-| xml_PDBML_gzipped | 108.046 ms |  
-| pdb_PDBFile_ungzipped | 18.712 ms |  
-| xml_PDBML_ungzipped | 63.930 ms |  
-| pdb_PDBFile_gzipped | 61.506 ms |  
+| pdb_PDBFile_ungzipped | 28.401 ms |  
+| pdb_PDBFile_gzipped | 51.979 ms |  
   
 | input | |  
 |---|---|  
-| xml_PDBML_gzipped | 264.028 ms |  
-| pdb_PDBFile_ungzipped | 12.043 ms |  
-| xml_PDBML_ungzipped | 245.476 ms |  
-| pdb_PDBFile_gzipped | 19.502 ms |  
-  
+| xml_PDBML_gzipped | 238.848 ms |  
+| pdb_PDBFile_ungzipped | 8.277 ms |  
+| xml_PDBML_ungzipped | 239.189 ms |  
+| pdb_PDBFile_gzipped | 19.802 ms |  
+
 #### Information module  
   
 | highlevel | |  
 |---|---|  
-| ZBLMIp_ | 13.228 s |  
-| Buslje09_ | 1.379 s |  
+| ZBLMIp_ | 17.037 s |  
+| Buslje09_ | 1.557 s |  
   
 | mapcolfreq! | |  
 |---|---|  
-| Entropy_Count_Gapped | 51.292 μs |  
-| MI_Count | 4.056 ms |  
-| Entropy_Probability | 49.799 μs |  
-| MI_Probability | 5.639 ms |  
-| Entropy_Count | 48.138 μs |  
-| Entropy_Probability_Gapped | 50.423 μs |  
-| MI_Count_Gapped | 4.533 ms |  
-| MI_Probability_Gapped | 6.312 ms |  
+| Entropy_Count_Gapped | 38.939 μs |  
+| MI_Count | 4.380 ms |  
+| Entropy_Probability | 38.246 μs |  
+| MI_Probability | 6.039 ms |  
+| Entropy_Count | 37.988 μs |  
+| Entropy_Probability_Gapped | 39.852 μs |  
+| MI_Count_Gapped | 4.864 ms |  
+| MI_Probability_Gapped | 6.679 ms |  
   
 | lowlevel | |  
 |---|---|  
-| probabilities_col_col | 2.997 μs |  
-| count_col | 604.861 ns |  
-| probabilities_col_col_col | 64.766 μs |  
-| count_col_col | 2.219 μs |  
-| count_col_col_clusters | 2.304 μs |  
-| count_col_col_col | 39.995 μs |  
-| probabilities_blosum | 103.877 μs |  
-| count_col_clusters | 593.821 ns |  
-| probabilities_col | 632.840 ns |  
-| count_col_col_col_clusters | 39.601 μs |  
+| probabilities_col_col | 2.368 μs |  
+| count_col | 437.256 ns |  
+| probabilities_col_col_col | 56.752 μs |  
+| count_col_col | 1.737 μs |  
+| count_col_col_clusters | 1.856 μs |  
+| count_col_col_col | 32.202 μs |  
+| probabilities_blosum | 98.624 μs |  
+| count_col_clusters | 443.382 ns |  
+| probabilities_col | 478.442 ns |  
+| count_col_col_col_clusters | 32.347 μs |  
 
 #### Pfam/pipeline  
   
 |   |   |  
 |---|---|  
-| read_pfam_gzipped | 11.937 ms |  
-| contact_map | 413.881 μs |  
-| getseq2pdb | 7.306 μs |  
-| msacolumn2pdbresidue_sifts | 35.733 ms |  
-| residue_list_to_dict | 158.207 μs |  
-| hasresidues | 17.626 μs |  
-| AUC | 788.969 μs |  
-| msaresidues | 21.869 μs |  
-| read_PDBML_gzipped | 261.228 ms |  
-| buslje09 | 1.380 s |  
-| msacolumn2pdbresidue_sifts_gzipped | 37.308 ms |  
+| read_pfam_gzipped | 3.752 ms |  
+| contact_map | 366.394 μs |  
+| getseq2pdb | 9.117 μs |  
+| msacolumn2pdbresidue_sifts | 19.283 ms |  
+| residue_list_to_dict | 21.506 μs |  
+| hasresidues | 4.719 μs |  
+| AUC | 664.398 μs |  
+| msaresidues | 7.612 μs |  
+| read_PDBML_gzipped | 243.268 ms |  
+| buslje09 | 1.555 s |  
+| msacolumn2pdbresidue_sifts_gzipped | 20.428 ms |  

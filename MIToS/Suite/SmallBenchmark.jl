@@ -10,6 +10,9 @@ using MIToS.SIFTS
 using MIToS.Pfam
 using MIToS.Utils
 
+# Ensure output directory exists for temporary files.
+mkpath("./tmp")
+
 # --------------------------------------------------------------------------- #
 # MSA module benchmarks
 const small_bench_msa = BenchmarkGroup()
@@ -50,7 +53,7 @@ for (file,gzipped,format) in [(msafile_sth_gz, "gzipped", MIToS.MSA.Stockholm),
 
     outfile = string("./tmp/",split(file,"/")[end])
     msa_to_save = read_file(file, format)
-    small_bench_msa["output"][string(format,"_",gzipped)] = @benchmarkable write($outfile, $msa_to_save, $format)
+    small_bench_msa["output"][string(format,"_",gzipped)] = @benchmarkable write_file($outfile, $msa_to_save, $format)
 end
 
 ##### Identity
@@ -75,15 +78,15 @@ small_bench_information["mapcolfreq!"] = BenchmarkGroup()
 
 const residues = getresidues(aln);
 
-small_bench_information["mapcolfreq!"][string("Entropy_Probability")] = @benchmarkable mapcolfreq!(entropy, $residues, Probabilities(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
-small_bench_information["mapcolfreq!"][string("Entropy_Count")] = @benchmarkable mapcolfreq!(entropy, $residues, Counts(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
+small_bench_information["mapcolfreq!"][string("Entropy_Probability")] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Probabilities(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
+small_bench_information["mapcolfreq!"][string("Entropy_Count")] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Frequencies(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
 small_bench_information["mapcolfreq!"][string("MI_Probability")] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Probabilities(ContingencyTable(Float64,Val{2},UngappedAlphabet())))
-small_bench_information["mapcolfreq!"][string("MI_Count")] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Counts(ContingencyTable(Float64,Val{2},UngappedAlphabet())))
+small_bench_information["mapcolfreq!"][string("MI_Count")] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Frequencies(ContingencyTable(Float64,Val{2},UngappedAlphabet())))
 
-small_bench_information["mapcolfreq!"][string("Entropy_Probability_Gapped")] = @benchmarkable mapcolfreq!(entropy, $residues, Probabilities(ContingencyTable(Float64,Val{1},GappedAlphabet())))
-small_bench_information["mapcolfreq!"][string("Entropy_Count_Gapped")] = @benchmarkable mapcolfreq!(entropy, $residues, Counts(ContingencyTable(Float64,Val{1},GappedAlphabet())))
+small_bench_information["mapcolfreq!"][string("Entropy_Probability_Gapped")] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Probabilities(ContingencyTable(Float64,Val{1},GappedAlphabet())))
+small_bench_information["mapcolfreq!"][string("Entropy_Count_Gapped")] = @benchmarkable mapcolfreq!(shannon_entropy, $residues, Frequencies(ContingencyTable(Float64,Val{1},GappedAlphabet())))
 small_bench_information["mapcolfreq!"][string("MI_Probability_Gapped")] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Probabilities(ContingencyTable(Float64,Val{2},GappedAlphabet())))
-small_bench_information["mapcolfreq!"][string("MI_Count_Gapped")] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Counts(ContingencyTable(Float64,Val{2},GappedAlphabet())))
+small_bench_information["mapcolfreq!"][string("MI_Count_Gapped")] = @benchmarkable mapcolpairfreq!(mutual_information, $residues, Frequencies(ContingencyTable(Float64,Val{2},GappedAlphabet())))
 
 ##### high level
 small_bench_information["highlevel"] = BenchmarkGroup()
@@ -103,12 +106,12 @@ const Gij = ContingencyTable{Float64,  2, UngappedAlphabet}(UngappedAlphabet());
 const nseq_msa = nsequences(aln);
 const clusters = hobohmI(aln, 62);
 
-small_bench_information["lowlevel"]["count_col"] = @benchmarkable count($column_i)
-small_bench_information["lowlevel"]["count_col_col"] = @benchmarkable count($column_i, $column_j)
-small_bench_information["lowlevel"]["count_col_col_col"] = @benchmarkable count($column_i, $column_j, $column_k)
-small_bench_information["lowlevel"]["count_col_clusters"] = @benchmarkable count($column_i, weights=$clusters)
-small_bench_information["lowlevel"]["count_col_col_clusters"] = @benchmarkable count($column_i, $column_j, weights=$clusters)
-small_bench_information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable count($column_i, $column_j, $column_k, weights=$clusters)
+small_bench_information["lowlevel"]["count_col"] = @benchmarkable frequencies($column_i)
+small_bench_information["lowlevel"]["count_col_col"] = @benchmarkable frequencies($column_i, $column_j)
+small_bench_information["lowlevel"]["count_col_col_col"] = @benchmarkable frequencies($column_i, $column_j, $column_k)
+small_bench_information["lowlevel"]["count_col_clusters"] = @benchmarkable frequencies($column_i; weights=$clusters)
+small_bench_information["lowlevel"]["count_col_col_clusters"] = @benchmarkable frequencies($column_i, $column_j; weights=$clusters)
+small_bench_information["lowlevel"]["count_col_col_col_clusters"] = @benchmarkable frequencies($column_i, $column_j, $column_k; weights=$clusters)
 small_bench_information["lowlevel"]["probabilities_col"] = @benchmarkable probabilities($column_i)
 small_bench_information["lowlevel"]["probabilities_col_col"] = @benchmarkable probabilities($column_i, $column_j)
 small_bench_information["lowlevel"]["probabilities_col_col_col"] = @benchmarkable probabilities($column_i, $column_j, $column_k)
@@ -146,12 +149,11 @@ end
 ##### output
 small_bench_mitos_pdb["output"] = BenchmarkGroup()
 
+# PDBML writing is no longer supported in MIToS; benchmark only the PDB (PDBFile) outputs.
 for (file,gzipped,label,format) in [(pdb_pdb_gz, "gzipped", "pdb", PDBFile),
-                                    (pdb_xml_gz, "gzipped", "xml", PDBML),
-                                    (pdb_pdb,  "ungzipped", "pdb", PDBFile),
-                                    (pdb_xml,  "ungzipped", "xml", PDBML)]
+                                    (pdb_pdb,  "ungzipped", "pdb", PDBFile)]
     outfile = string("./tmp/",split(file,"/")[end])
-    small_bench_mitos_pdb["output"][string(label,"_",format,"_",gzipped)] = @benchmarkable write($outfile, $pdb_residues, $format)
+    small_bench_mitos_pdb["output"][string(label,"_",format,"_",gzipped)] = @benchmarkable write_file($outfile, $pdb_residues, $format)
 end
 
 # --------------------------------------------------------------------------- #
@@ -163,7 +165,7 @@ const small_bench_pfam = BenchmarkGroup()
 # Set up
 const aln_mapping = read_file(msafile_sth_gz, Stockholm, generatemapping=true, useidcoordinates=true);
 const col2res = msacolumn2pdbresidue(aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../../data/4bl0.xml.gz");
-const resdict = @residuesdict pdb_residues model "1" chain "B" group "ATOM" residue All;
+const resdict = residuesdict(pdb_residues; model="1", chain="B", group="ATOM", residue=All);
 const cmap = msacontacts(aln_mapping, resdict, col2res);
 const ZMIp, MIp = buslje09(aln_mapping);
 
@@ -172,7 +174,7 @@ small_bench_pfam["getseq2pdb"] = @benchmarkable getseq2pdb($aln_mapping)
 small_bench_pfam["msacolumn2pdbresidue_sifts"] = @benchmarkable msacolumn2pdbresidue($aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../../data/4bl0.xml")
 small_bench_pfam["msacolumn2pdbresidue_sifts_gzipped"] = @benchmarkable msacolumn2pdbresidue($aln_mapping, "BUB1_YEAST/291-355", "4BL0", "B", "PF08171","../../data/4bl0.xml.gz")
 small_bench_pfam["read_PDBML_gzipped"] = @benchmarkable read_file("../../data/4BL0.xml.gz", PDBML)
-small_bench_pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb_residues,"1","B","ATOM",All)
+small_bench_pfam["residue_list_to_dict"] = @benchmarkable residuesdict($pdb_residues; model="1", chain="B", group="ATOM", residue=All)
 small_bench_pfam["msaresidues"] = @benchmarkable msaresidues($aln_mapping, $resdict, $col2res)
 small_bench_pfam["hasresidues"] = @benchmarkable hasresidues($aln_mapping, $col2res)
 small_bench_pfam["contact_map"] = @benchmarkable msacontacts($aln_mapping, $resdict, $col2res)
