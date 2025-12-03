@@ -1,11 +1,21 @@
 using MIToS.MSA
 using MIToS.Information
 
-const msa_long = read("../data/PF00089_aligned.fasta", FASTA)
-const msa_wide = read("../data/PF16957_aligned.fasta", FASTA)
+const data_dir = normpath(joinpath(@__DIR__, "..", "data"))
 
-mapcolfreq!(entropy, msa_long, Probabilities{Float64,1,UngappedAlphabet}(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
-mapcolfreq!(entropy, msa_wide, Probabilities{Float64,1,UngappedAlphabet}(ContingencyTable(Float64,Val{1},UngappedAlphabet())))
+const msa_long = read_file(joinpath(data_dir, "PF00089_aligned.fasta"), FASTA)
+const msa_wide = read_file(joinpath(data_dir, "PF16957_aligned.fasta"), FASTA)
 
-println("[BENCH] Shannon entropy PF00089: ", @elapsed mapcolfreq!(entropy, msa_long, Probabilities{Float64,1,UngappedAlphabet}(ContingencyTable(Float64,Val{1},UngappedAlphabet()))))
-println("[BENCH] Shannon entropy PF16957: ", @elapsed mapcolfreq!(entropy, msa_wide, Probabilities{Float64,1,UngappedAlphabet}(ContingencyTable(Float64,Val{1},UngappedAlphabet()))))
+table = Frequencies(ContingencyTable(Float64, Val{1}, UngappedAlphabet()))
+
+_ = mapcolfreq!(shannon_entropy, msa_long, table)
+_ = mapcolfreq!(shannon_entropy, msa_wide, table)
+
+println(
+    "[BENCH] Shannon entropy PF00089: ",
+    @elapsed mapcolfreq!(shannon_entropy, msa_long, table)
+)
+println(
+    "[BENCH] Shannon entropy PF16957: ",
+    @elapsed mapcolfreq!(shannon_entropy, msa_wide, table)
+)

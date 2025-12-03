@@ -1,0 +1,13 @@
+name: mitos-benchmarks
+channels:
+  - conda-forge
+dependencies:
+  - python>=3.11
+  - pip
+  - r-base>=4.3
+  - r-bio3d
+  - r-igraph
+  - pip:
+      - prody
+      - biopython
+      - numpy

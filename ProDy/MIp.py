@@ -1,22 +1,21 @@
 import time
-from prody import *
+from prody import applyMutinfoCorr, buildMutinfoMatrix, parseMSA
 
 msa_long = parseMSA("../data/PF00089_aligned.fasta")
 msa_wide = parseMSA("../data/PF16957_aligned.fasta")
 
+
 def mip(msa):
-    MI = buildMutinfoMatrix(msa)
-    MIp = applyMutinfoCorr(MI)
-    return MIp
+    mi = buildMutinfoMatrix(msa)
+    return applyMutinfoCorr(mi, corr="prod")
 
-start = time.time()
+
+start = time.perf_counter()
 mip(msa_long)
-elapsed = time.time() - start
+elapsed = time.perf_counter() - start
+print("[BENCH] MIp PF00089:", elapsed)
 
-print "[BENCH] MIp PF00089: ", elapsed
-
-start = time.time()
+start = time.perf_counter()
 mip(msa_wide)
-elapsed = time.time() - start
-
-print "[BENCH] MIp PF16957: ", elapsed
+elapsed = time.perf_counter() - start
+print("[BENCH] MIp PF16957:", elapsed)

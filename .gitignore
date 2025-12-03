@@ -14,3 +14,6 @@ MIToS/Suite/tmp/*.*
 # R
 .RData
 .Rhistory
+env/
+.env/
+.conda/
